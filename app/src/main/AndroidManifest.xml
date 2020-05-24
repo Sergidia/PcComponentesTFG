@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="ucm.tfg.pccomponentes">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity android:name=".Main">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".main.Register">
+            <intent-filter>
+                <action android:name="android.intent.action.REGISTER" />
+
+                <category android:name="android.intent.category.REGISTER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".main.Profile">
+            <intent-filter>
+                <action android:name="android.intent.action.PROFILE" />
+
+                <category android:name="android.intent.category.PROFILE" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".list.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.LIST" />
+
+                <category android:name="android.intent.category.LIST" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".list.ComponenteView">
+            <intent-filter>
+                <action android:name="android.intent.action.COMPONENT" />
+
+                <category android:name="android.intent.category.COMPONENT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".list.SeguidosView">
+            <intent-filter>
+                <action android:name="android.intent.action.SEGUIDOS" />
+
+                <category android:name="android.intent.category.SEGUIDOS" />
+            </intent-filter>
+        </activity>
+
+        <!-- [START firebase_service] -->
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/logopccomponentes" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorPrimary" />
+        <service
+            android:name=".notifications.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- [END firebase_service] -->
+
+    </application>
+
+</manifest>
