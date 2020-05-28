@@ -21,7 +21,7 @@ implements View.OnClickListener{
 
     private final int VIEW_TYPE_ITEM = 0;
     private final int VIEW_TYPE_LOADING = 1;
-    ArrayList<Item> listDatos;
+    private ArrayList<Item> listDatos;
     private View.OnClickListener listener;
 
     public Adapter(ArrayList<Item> listDatos) {

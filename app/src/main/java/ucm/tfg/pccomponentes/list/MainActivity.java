@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity  implements Response.Listene
                                 Map<String,Object> componente = new HashMap<String, Object>();
                                 componente = document.getData();
                                 Item aux = new Item((String)componente.get("codigo"),(String)componente.get("nombre"),
-                                        "https://thumb.pccomponentes.com/w-530-530/articles/14/146650/1.jpg",
+                                        (String)componente.get("img"),
                                         //Double.parseDouble((String)componente.get("precio")),
                                         ((Number)componente.get("precio")).doubleValue(),
                                         (String)componente.get("url"),
