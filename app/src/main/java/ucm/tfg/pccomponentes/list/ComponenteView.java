@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -21,9 +22,15 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.Source;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -45,6 +52,8 @@ public class ComponenteView extends AppCompatActivity implements Response.Listen
     CheckBox seguir;
     EditText precioNoti;
     Button btnActualiza;
+    String email;
+    Item item;
 
    private Interes seguimiento;
     FirebaseFirestore db;
@@ -55,6 +64,7 @@ public class ComponenteView extends AppCompatActivity implements Response.Listen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_componente_view);
+        email = getIntent().getExtras().getString("email");
         nombre = findViewById(R.id.nombreComponente);
         precio = findViewById(R.id.precioComponente);
         descripcion = findViewById(R.id.descripcionComponente);
@@ -65,7 +75,6 @@ public class ComponenteView extends AppCompatActivity implements Response.Listen
         btnActualiza = findViewById(R.id.btnActualizar);
         db = FirebaseFirestore.getInstance();
         Bundle recepcion = getIntent().getExtras();
-        Item item = null;
         if(recepcion != null){
             item = (Item) recepcion.getSerializable("componente");
             nombre.setText(item.getNombre());
@@ -76,13 +85,35 @@ public class ComponenteView extends AppCompatActivity implements Response.Listen
                     .load(item.getFoto())
                     .resize(300,300)
                     .into(imagen);
-            seguido = (Boolean) recepcion.getBoolean("interesado");
+            seguido = false;
+            seguimiento = new Interes(item.getCodigo(), (double) 0);
+            final double precio;
+            db.collection("usuarios").document(email).collection("interes")
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            if (task.isSuccessful()) {
+                                for (QueryDocumentSnapshot document : task.getResult()) {
 
-            if(seguido){
-                seguimiento = (Interes) recepcion.getSerializable("seguimiento");
-                seguir.setChecked(true);
-                precioNoti.setText(String.valueOf(seguimiento.getPrecioMax()));
-            }
+                                    if(document.getId().equals(item.getCodigo())){
+                                        Map<String,Object> interes = new HashMap<String, Object>();
+                                        interes = document.getData();
+                                        seguimiento = new Interes(document.getId(),(Double.parseDouble((String)interes.get("precio"))));
+
+                                        seguido = true;
+                                        seguir.setChecked(true);
+                                        precioNoti.setText(String.valueOf(seguimiento.getPrecioMax()));
+                                    }
+
+                                }
+                            } else {
+                                Log.d("buu", "Error getting documents: ", task.getException());
+                            }
+                        }
+                    });
+            //seguido = (Boolean) recepcion.getBoolean("interesado");
+
         }
 
 
@@ -101,10 +132,9 @@ public class ComponenteView extends AppCompatActivity implements Response.Listen
             if(!seguido || (seguido &&(seguimiento.getPrecioMax() != Double.parseDouble(precioNoti.getText().toString())))){
                 Map<String,Object> aux = new HashMap<String, Object>();
 
-                aux.put("codigo",seguimiento.getCodigo());
-                aux.put("precio",precioNoti.getText().toString());
+                aux.put("precio",Double.parseDouble(precioNoti.getText().toString()));
 
-                db.collection("usuarios").document("mineira@ucm.es")
+                db.collection("usuarios").document(email)
                         .collection("interes").document(seguimiento.getCodigo())
                         .set(aux)
                         .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -131,7 +161,7 @@ public class ComponenteView extends AppCompatActivity implements Response.Listen
         }
         else{
             if(seguido){
-                db.collection("usuarios").document("mineira@ucm.es")
+                db.collection("usuarios").document(email)
                         .collection("interes").document(seguimiento.getCodigo())
                         .delete()
                         .addOnSuccessListener(new OnSuccessListener<Void>() {

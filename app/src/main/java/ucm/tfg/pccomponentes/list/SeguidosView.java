@@ -106,7 +106,7 @@ public class SeguidosView extends AppCompatActivity implements Response.Listener
                         if(task.isSuccessful()){
                             for (QueryDocumentSnapshot document : task.getResult()) {
                                 Map<String,Object> interes = document.getData();
-                                Interes aux = new Interes((String)interes.get("codigo"),((Number)interes.get("precio")).doubleValue());
+                                Interes aux = new Interes(document.getId(),((Number)interes.get("precio")).doubleValue());
                                 listaIntereses.add(aux);
                                 mapaInteres.put(aux.getCodigo(),aux);
                             }
@@ -121,7 +121,7 @@ public class SeguidosView extends AppCompatActivity implements Response.Listener
                                                     DocumentSnapshot document = task.getResult();
                                                     Map<String,Object> componente = document.getData();
                                                     Item aux = new Item((String)componente.get("codigo"),(String)componente.get("nombre"),
-                                                            "https://thumb.pccomponentes.com/w-530-530/articles/14/146650/1.jpg",
+                                                            (String)componente.get("img"),
                                                             //Double.parseDouble((String)componente.get("precio")),
                                                             ((Number)componente.get("precio")).doubleValue(),
                                                             (String)componente.get("url"),
@@ -179,7 +179,9 @@ public class SeguidosView extends AppCompatActivity implements Response.Listener
 
                 }
                 else if(item.getItemId() == R.id.principal){
-                    startActivity(new Intent(getApplicationContext(),MainActivity.class));
+                    Intent i = new Intent(getApplicationContext(),MainActivity.class);
+                    i.putExtra("email", email);
+                    startActivity(i);
                     overridePendingTransition(0,0);
                     return true;
                 }

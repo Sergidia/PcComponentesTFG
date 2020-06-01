@@ -11,4 +11,10 @@
         app:actionViewClass="android.widget.SearchView"
         app:showAsAction="always|collapseActionView"
         />
+    <item
+        android:id="@+id/op_perfil"
+        android:title="@string/op_perfil" />
+    <item
+        android:id="@+id/opCerrarSesion"
+        android:title="@string/op_sesion" />
 </menu>

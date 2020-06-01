@@ -9,4 +9,9 @@
 
     <string name="notif_push_text">Notificaciones móviles</string>
     <string name="notif_email_text">Notificaciones por correo</string>
+
+    <string name="op_perfil">Mi Perfil</string>
+    <string name="op_sesion">Cerrar Sesion</string>
+
+
 </resources>

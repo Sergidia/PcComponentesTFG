@@ -1,6 +1,7 @@
 package ucm.tfg.pccomponentes.list;
 
 import ucm.tfg.pccomponentes.R;
+import ucm.tfg.pccomponentes.main.Profile;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -118,11 +119,6 @@ public class MainActivity extends AppCompatActivity  implements Response.Listene
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful()) {
                             if (task.getResult().size() == 0) {
-                                Map<String, Object> city = new HashMap<>();
-                                city.put("name", "Los Angeles");
-                                city.put("state", "CA");
-                                city.put("country", "USA");
-                                db.collection("usuarios").document(email).collection("interes").document("1").set(city);
                             }
                         }
                     }
@@ -141,7 +137,7 @@ public class MainActivity extends AppCompatActivity  implements Response.Listene
                             for (QueryDocumentSnapshot document : task.getResult()) {
                                 Map<String,Object> componente = new HashMap<String, Object>();
                                 componente = document.getData();
-                                Item aux = new Item((String)componente.get("codigo"),(String)componente.get("nombre"),
+                                Item aux = new Item(document.getId(),(String)componente.get("nombre"),
                                         (String)componente.get("img"),
                                         //Double.parseDouble((String)componente.get("precio")),
                                         ((Number)componente.get("precio")).doubleValue(),
@@ -170,6 +166,7 @@ public class MainActivity extends AppCompatActivity  implements Response.Listene
             public void onClick(View v) {
                 Toast.makeText(getApplicationContext(),datosMostrados.get(recycler.getChildAdapterPosition(v)).getCodigo(),Toast.LENGTH_SHORT).show();
                 Intent componenteView = new Intent(MainActivity.this,ComponenteView.class);
+                componenteView.putExtra("email",email);
                 Bundle miBundle = new Bundle();
                 miBundle.putSerializable("componente",datosMostrados.get(recycler.getChildAdapterPosition(v)));
                 componenteView.putExtras(miBundle);
@@ -404,6 +401,20 @@ public class MainActivity extends AppCompatActivity  implements Response.Listene
             }
         });
         return true;
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item){
+        int id = item.getItemId();
+
+        switch (id){
+            case R.id.opCerrarSesion:  Toast.makeText(getApplicationContext(),"cerrar sesion",Toast.LENGTH_SHORT).show();break;
+            case R.id.op_perfil:  Intent i = new Intent(getApplicationContext(), Profile.class);
+                i.putExtra("email", email);
+                startActivity(i);
+                overridePendingTransition(0,0);break;
+            default: break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
 
