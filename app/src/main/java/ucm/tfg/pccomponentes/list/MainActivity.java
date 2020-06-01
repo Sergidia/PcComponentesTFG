@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity  implements Response.Listene
         handleSSLHandshake();
         request = Volley.newRequestQueue(getApplicationContext());
        // cargarWebService();
-
+        comprobarListaIntereses();
         cargarListaComponentes();
 
         /*Map<String,Object> usuario= new HashMap<String,Object>();
@@ -108,6 +108,26 @@ public class MainActivity extends AppCompatActivity  implements Response.Listene
                         Log.w("error","Error adding document",e);
                     }
                 });*/
+    }
+
+    private void comprobarListaIntereses(){
+        db = FirebaseFirestore.getInstance();
+        db.collection("usuarios").document(email).collection("interes").get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            if (task.getResult().size() == 0) {
+                                Map<String, Object> city = new HashMap<>();
+                                city.put("name", "Los Angeles");
+                                city.put("state", "CA");
+                                city.put("country", "USA");
+                                db.collection("usuarios").document(email).collection("interes").document("1").set(city);
+                            }
+                        }
+                    }
+                });
+
     }
 
     private void cargarListaComponentes() {
