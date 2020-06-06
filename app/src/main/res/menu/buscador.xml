@@ -6,7 +6,7 @@
     android:layout_width="wrap_content">
     <item
         android:id="@+id/buscador"
-        android:title="Buscador"
+        android:title="@string/op_buscador"
         android:icon="@android:drawable/ic_menu_search"
         app:actionViewClass="android.widget.SearchView"
         app:showAsAction="always|collapseActionView"

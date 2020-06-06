@@ -2,6 +2,7 @@ package ucm.tfg.pccomponentes.list;
 
 import ucm.tfg.pccomponentes.Main;
 import ucm.tfg.pccomponentes.R;
+import ucm.tfg.pccomponentes.main.Profile;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -48,6 +49,8 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        setTitle("Listado de seguimiento");
         super.onCreate(savedInstanceState);
 
         try {
@@ -184,6 +187,39 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
         });
 
         recycler.setAdapter(rva);
+    }
+
+    /**
+     * Opciones de la hamburguesa: se redirecciona al perfil o se cierra sesión
+     *
+     * @param item menuItem
+     * @return opcion elegida
+     */
+    public boolean onOptionsItemSelected(MenuItem item){
+
+        int id = item.getItemId();
+        Intent i;
+
+        switch (id){
+
+            case R.id.opCerrarSesion:
+                FirebaseAuth.getInstance().signOut();
+                i = new Intent(getApplicationContext(), Main.class);
+                startActivity(i);
+                overridePendingTransition(0,0);
+                break;
+
+            case R.id.op_perfil:
+                i = new Intent(getApplicationContext(), Profile.class);
+                startActivity(i);
+                overridePendingTransition(0,0);
+                break;
+
+            default:
+                break;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     /**

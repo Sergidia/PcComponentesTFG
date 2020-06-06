@@ -2,6 +2,7 @@
     <string name="app_name">PcComponentes</string>
     <string name="user_hint">Usuario (email)</string>
     <string name="password_hint">Contraseña</string>
+    <string name="forgotPassword_hint">¿Has olvidado tu contraseña?</string>
     <string name="passwordConfirm_hint">Confirmar contraseña</string>
     <string name="signIn_text">Iniciar sesión</string>
     <string name="register_text">Registrarse</string>
@@ -12,6 +13,10 @@
 
     <string name="op_perfil">Mi Perfil</string>
     <string name="op_sesion">Cerrar Sesion</string>
+    <string name="op_buscador">Buscador</string>
+
+    <string name="vistaPrincipal">Principal</string>
+    <string name="vistaSeguidos">Seguidos</string>
 
 
 </resources>

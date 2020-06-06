@@ -2,23 +2,28 @@ package ucm.tfg.pccomponentes.main
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.MenuItem
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
 import kotlinx.android.synthetic.main.activity_profile.*
 import ucm.tfg.pccomponentes.Main
 import ucm.tfg.pccomponentes.R
 import ucm.tfg.pccomponentes.list.MainActivity
+import ucm.tfg.pccomponentes.list.SeguidosView
 import ucm.tfg.pccomponentes.notifications.MyFirebaseMessagingService
 import ucm.tfg.pccomponentes.notifications.NotificationDocumentObject
 import ucm.tfg.pccomponentes.utilities.CheckData
 
 class Profile : AppCompatActivity() {
 
+    private var bottomNavigationView: BottomNavigationView? = null
+
     /**
-     * Abrimos la ventana activity_register para permitir
-     * al usuario registrarse introduciendo todos los datos
+     * Abrimos la ventana activity_profile para permitir
+     * al usuario actualizar sus datos
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         Thread.sleep(2000)
@@ -27,10 +32,14 @@ class Profile : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
+        // Generamos el listener para el menú inferior
+        bottomNavigationView = findViewById(R.id.bottom_navigation)
+        setListenerBottomMenu()
+
         val email: String = FirebaseAuth.getInstance().currentUser?.email.toString()
 
         // Se comprueba que el usuario está correctamente autenticado, de lo contrario se vuelve a la vista del login
-        if (email != "" && email != "null") {
+        if (email == "" && email == "null") {
             showAlert("Error de autenticación")
             FirebaseAuth.getInstance().signOut()
             showMain()
@@ -94,16 +103,23 @@ class Profile : AppCompatActivity() {
     }
 
     /**
-     * Método para mostrar errores con una ventana emergente
+     * Menú inferior con la redirección a la lista de seguidos o al listado general de componentes
      */
-    private fun showAlert(mensajeError: String) {
+    private fun setListenerBottomMenu() {
+        bottomNavigationView?.setOnNavigationItemSelectedListener {item: MenuItem ->
+            when(item.itemId) {
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Error")
-        builder.setMessage(mensajeError)
-        builder.setPositiveButton("Aceptar", null)
-        val dialog: AlertDialog = builder.create()
-        dialog.show()
+                R.id.principal -> {
+                    showList()
+                    true
+                }
+                R.id.seguidos -> {
+                    showSeguidos()
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
     /**
@@ -123,4 +139,27 @@ class Profile : AppCompatActivity() {
         val listIntent = Intent(this, MainActivity::class.java)
         startActivity(listIntent)
     }
+
+    /**
+     * Redirección a la página de lista de componentes
+     */
+    private fun showSeguidos() {
+
+        val seguidosIntent = Intent(this, SeguidosView::class.java)
+        startActivity(seguidosIntent)
+    }
+
+    /**
+     * Método para mostrar errores con una ventana emergente
+     */
+    private fun showAlert(mensajeError: String) {
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Error")
+        builder.setMessage(mensajeError)
+        builder.setPositiveButton("Aceptar", null)
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
+    }
+
 }

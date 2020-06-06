@@ -2,6 +2,7 @@ package ucm.tfg.pccomponentes
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -98,6 +99,15 @@ class Main : AppCompatActivity() {
 
         registerButton.setOnClickListener {
             showRegister()
+        }
+
+        forgotPassword.setOnClickListener {
+            if (userText.text.isNotEmpty()) {
+                FirebaseAuth.getInstance().sendPasswordResetEmail(userText.text.toString())
+                Toast.makeText(this, "Se ha enviado un email para reestablecer su contraseña", Toast.LENGTH_LONG).show()
+            }
+            else showAlert("Introduzca su email y pulse " + getString(R.string.forgotPassword_hint))
+
         }
     }
 

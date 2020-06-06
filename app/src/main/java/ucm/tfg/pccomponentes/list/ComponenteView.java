@@ -46,6 +46,7 @@ public class ComponenteView extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTitle("Ficha del componente");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_componente_view);
 

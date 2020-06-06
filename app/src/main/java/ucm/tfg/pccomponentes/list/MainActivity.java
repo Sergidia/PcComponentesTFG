@@ -18,7 +18,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.SearchView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -37,9 +36,6 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
    private RecyclerView recycler;
     private ArrayList<Item> datosTotales, datosMostrados, datosFiltrados;
 
-    private FirebaseFirestore db;
-    private String email;
-
     private Adapter rva;
     private boolean isLoading;
     private boolean usaBuscador;
@@ -48,10 +44,12 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        setTitle("Listado de componentes");
         super.onCreate(savedInstanceState);
 
         try {
-            email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+            String email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
 
             // Se comprueba que el usuario está correctamente autenticado, de lo contrario se vuelve a la vista del login
             if (email == null || email.equals("") || email.equals("null")) {
@@ -95,7 +93,7 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
      */
     private void cargarListaComponentes() {
 
-        db = FirebaseFirestore.getInstance();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("componentes")
                 .get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
@@ -300,7 +298,6 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
         mi.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
             @Override
             public boolean onMenuItemActionExpand(MenuItem item) {
-
                 return true;
             }
 
@@ -331,11 +328,13 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
                 startActivity(i);
                 overridePendingTransition(0,0);
                 break;
+
             case R.id.op_perfil:
                 i = new Intent(getApplicationContext(), Profile.class);
                 startActivity(i);
                 overridePendingTransition(0,0);
                 break;
+
             default:
                 break;
         }
