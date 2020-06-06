@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
 import kotlinx.android.synthetic.main.activity_profile.*
+import ucm.tfg.pccomponentes.Main
 import ucm.tfg.pccomponentes.R
 import ucm.tfg.pccomponentes.list.MainActivity
 import ucm.tfg.pccomponentes.notifications.MyFirebaseMessagingService
@@ -15,10 +16,10 @@ import ucm.tfg.pccomponentes.utilities.CheckData
 
 class Profile : AppCompatActivity() {
 
-    /*
-       Abrimos la ventana activity_register para permitir
-       al usuario registrarse introduciendo todos los datos
-    */
+    /**
+     * Abrimos la ventana activity_register para permitir
+     * al usuario registrarse introduciendo todos los datos
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         Thread.sleep(2000)
         setTheme(R.style.AppTheme)
@@ -26,13 +27,19 @@ class Profile : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
-        iniciarPerfil()
+        val email: String = FirebaseAuth.getInstance().currentUser?.email.toString()
+
+        // Se comprueba que el usuario está correctamente autenticado, de lo contrario se vuelve a la vista del login
+        if (email != "" && email != "null") {
+            showAlert("Error de autenticación")
+            FirebaseAuth.getInstance().signOut()
+            showMain()
+        }
+        else iniciarPerfil()
     }
 
-    /*
-        Se configuran los botones y el título de la ventana. El botón de Registro intentará registrarse
-         con las datos proporcionados, llevándonos a activity_profile en caso de éxito o
-         mostrando un error si no se ha podido registrar el usuario
+    /**
+     * Vista del perfil del usuario donde podrá modificar su contraseña y las preferencias de notificación
      */
     private fun iniciarPerfil() {
 
@@ -68,7 +75,7 @@ class Profile : AppCompatActivity() {
                                         notificacionesUsuario.set(notif).addOnCompleteListener{
                                             if (it.isSuccessful){
                                                 // Si se ha actualizado correctamente redirigimos al listado de componentes
-                                                showList(userText.text.toString())
+                                                showList()
                                             } else {
                                                 showAlert(it.toString())
                                                 showAlert("No se ha podido actualizar el usuario, compruebe las opciones de notificación seleccionadas")
@@ -86,6 +93,9 @@ class Profile : AppCompatActivity() {
         }
     }
 
+    /**
+     * Método para mostrar errores con una ventana emergente
+     */
     private fun showAlert(mensajeError: String) {
 
         val builder = AlertDialog.Builder(this)
@@ -96,23 +106,21 @@ class Profile : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showProfile(email: String, provider: ProviderType) {
+    /**
+     * Redirección a la página de inicio de sesión
+     */
+    private fun showMain() {
 
-        val profileIntent = Intent(this, Profile::class.java).apply {
-            putExtra("email", email)
-            putExtra("provider", provider.name)
-        }
-        startActivity(profileIntent)
+        val mainIntent = Intent(this, Main::class.java)
+        startActivity(mainIntent)
     }
 
-    /*
-        Redirección a la página de lista de componentes
+    /**
+     * Redirección a la página de lista de componentes
      */
-    private fun showList(email: String) {
+    private fun showList() {
 
-        val listIntent = Intent(this, MainActivity::class.java).apply {
-            putExtra("email", email)
-        }
+        val listIntent = Intent(this, MainActivity::class.java)
         startActivity(listIntent)
     }
 }

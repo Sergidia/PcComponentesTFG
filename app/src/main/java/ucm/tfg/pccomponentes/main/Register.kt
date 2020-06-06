@@ -7,17 +7,17 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.*
 import kotlinx.android.synthetic.main.activity_register.*
+import ucm.tfg.pccomponentes.Main
 import ucm.tfg.pccomponentes.R
-import ucm.tfg.pccomponentes.list.MainActivity
 import ucm.tfg.pccomponentes.notifications.MyFirebaseMessagingService
 import ucm.tfg.pccomponentes.notifications.NotificationDocumentObject
 import ucm.tfg.pccomponentes.utilities.CheckData
 
 class Register : AppCompatActivity()  {
 
-    /*
-        Abrimos la ventana activity_register para permitir
-        al usuario registrarse introduciendo todos los datos
+    /**
+     * Abrimos la ventana activity_register para permitir
+     * al usuario registrarse introduciendo todos los datos
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         Thread.sleep(2000)
@@ -29,10 +29,10 @@ class Register : AppCompatActivity()  {
         iniciarRegistro()
     }
 
-    /*
-        Se configuran los botones y el título de la ventana. El botón de Registro intentará registrarse
-         con las datos proporcionados, llevándonos a activity_profile en caso de éxito o
-         mostrando un error si no se ha podido registrar el usuario
+    /**
+     * Se configuran los botones y el título de la ventana. El botón de Registro intentará registrarse
+     * con las datos proporcionados, llevándonos a activity_profile en caso de éxito o
+     * mostrando un error si no se ha podido registrar el usuario
      */
     private fun iniciarRegistro() {
 
@@ -53,7 +53,6 @@ class Register : AppCompatActivity()  {
                                 .createUserWithEmailAndPassword(userText.text.toString(),
                                         passwordText.text.toString()).addOnCompleteListener {
                                     if (it.isSuccessful){
-                                        //showProfile(it.result?.user?.email ?: "", ProviderType.BASIC)
 
                                         // Si los datos son correctos se inicia una instancia en Firestore para almacenar las preferencias de notificación del usuario
                                         val db = FirebaseFirestore.getInstance()
@@ -70,8 +69,12 @@ class Register : AppCompatActivity()  {
                                         // Insertamos el documento en la base de datos
                                         notificacionesUsuario.set(notif).addOnCompleteListener{
                                             if (it.isSuccessful){
-                                                // Si el registro ha sido satisfactorio redirigimos al listado de componentes
-                                                showList(userText.text.toString())
+
+                                                // Enviamos el email de verificación al correo del usuario
+                                                FirebaseAuth.getInstance().currentUser?.sendEmailVerification()
+
+                                                // Si el registro ha sido satisfactorio redirigimos a la vista del login
+                                                showMain()
                                             } else {
                                                 showAlert(it.toString())
                                                 showAlert("No se ha podido registrar el usuario, compruebe las opciones de notificación seleccionadas")
@@ -90,6 +93,18 @@ class Register : AppCompatActivity()  {
         }
     }
 
+    /**
+     * Redirección a la página de inicio de sesión
+     */
+    private fun showMain() {
+
+        val mainIntent = Intent(this, Main::class.java)
+        startActivity(mainIntent)
+    }
+
+    /**
+     * Método para mostrar errores con una ventana emergente
+     */
     private fun showAlert(mensajeError: String) {
 
         val builder = AlertDialog.Builder(this)
@@ -98,25 +113,5 @@ class Register : AppCompatActivity()  {
         builder.setPositiveButton("Aceptar", null)
         val dialog: AlertDialog = builder.create()
         dialog.show()
-    }
-
-    private fun showProfile(email: String, provider: ProviderType) {
-
-        val profileIntent = Intent(this, Profile::class.java).apply {
-            putExtra("email", email)
-            putExtra("provider", provider.name)
-        }
-        startActivity(profileIntent)
-    }
-
-    /*
-        Redirección a la página de lista de componentes
-     */
-    private fun showList(email: String) {
-
-        val listIntent = Intent(this, MainActivity::class.java).apply {
-            putExtra("email", email)
-        }
-        startActivity(listIntent)
     }
 }

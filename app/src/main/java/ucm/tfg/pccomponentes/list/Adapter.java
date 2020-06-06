@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.squareup.picasso.Picasso;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 
 public class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
@@ -28,6 +30,7 @@ implements View.OnClickListener{
         this.listDatos = listDatos;
     }
 
+    @NotNull
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
         RecyclerView.ViewHolder v=null;
         if(i == VIEW_TYPE_ITEM){
@@ -51,8 +54,6 @@ implements View.OnClickListener{
             else if(holder instanceof  ViewHolderCarga){
                 showLoadingView((ViewHolderCarga) holder, position);
             }
-
-
     }
 
     private void showLoadingView(ViewHolderCarga holder, int position) {
@@ -63,7 +64,7 @@ implements View.OnClickListener{
         vhd.categoria.setText(listDatos.get(pos).getCategoria());
         vhd.nombre.setText(listDatos.get(pos).getNombre());
         Picasso.get()
-                .load(listDatos.get(pos).getFoto())
+                .load(listDatos.get(pos).getImagen())
                 .resize(300,300)
                 .into(vhd.foto);
         vhd.precio.setText(String.valueOf(listDatos.get(pos).getPrecio()));
@@ -92,10 +93,10 @@ implements View.OnClickListener{
         private ImageView foto;
         ViewHolderDatos(@NonNull View itemView) {
             super(itemView);
-            nombre = (TextView)itemView.findViewById(R.id.idDocum);
-            categoria= (TextView)itemView.findViewById(R.id.idDescr);
-            foto= (ImageView)itemView.findViewById(R.id.idImagen);
-            precio=(TextView)itemView.findViewById(R.id.idPrecio);
+            nombre = itemView.findViewById(R.id.idDocum);
+            categoria= itemView.findViewById(R.id.idDescr);
+            foto= itemView.findViewById(R.id.idImagen);
+            precio= itemView.findViewById(R.id.idPrecio);
         }
 
     }

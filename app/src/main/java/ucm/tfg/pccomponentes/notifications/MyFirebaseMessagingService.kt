@@ -22,10 +22,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         private const val TAG = "Notificaciones Push"
         private var tokenData = ""
 
-
         /**
          * Se recupera el token del dispositivo del usuario
-         *
          */
         fun getInstanceToken(): String {
 
@@ -63,9 +61,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         // Check if message contains a data payload.
         remoteMessage.data.isNotEmpty().let {
-            Log.d(TAG, "Message data payload: " + remoteMessage.data)
 
-            //sendNotification(remoteMessage.notification?.title.toString(), remoteMessage.notification?.body.toString())
+            Log.d(TAG, "Message data payload: " + remoteMessage.data)
 
         }
 

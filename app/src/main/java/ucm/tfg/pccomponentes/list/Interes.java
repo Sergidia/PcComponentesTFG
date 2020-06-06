@@ -3,8 +3,14 @@ package ucm.tfg.pccomponentes.list;
 import java.io.Serializable;
 
 public class Interes implements Serializable {
+
     private  String codigo;
     private Double precioMax;
+
+    public Interes(String codigo, Double precioMax) {
+        this.codigo = codigo;
+        this.precioMax = precioMax;
+    }
 
     public String getCodigo() {
         return codigo;
@@ -22,8 +28,4 @@ public class Interes implements Serializable {
         this.precioMax = precioMax;
     }
 
-    public Interes(String codigo, Double precioMax) {
-        this.codigo = codigo;
-        this.precioMax = precioMax;
-    }
 }

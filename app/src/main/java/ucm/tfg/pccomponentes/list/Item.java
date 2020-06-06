@@ -3,22 +3,23 @@ package ucm.tfg.pccomponentes.list;
 import java.io.Serializable;
 
 public class Item implements Serializable {
+
     private String codigo;
     private String nombre;
-    private String foto;
+    private String imagen;
     private String url;
     private String categoria;
-    private boolean  valida;
+    private boolean valida;
     private double precio;
 
-    public Item(String codigo, String nombre, String foto,double precio, String url, String categoria, boolean valida) {
-        this.codigo = codigo;
-        this.nombre = nombre;
-        this.foto = foto;
-        this.precio = precio;
-        this.categoria = categoria;
-        this.url = url;
-        this.valida = valida;
+    public Item(String cod, String name, String img, double price, String link, String categ, boolean valid) {
+        this.codigo = cod;
+        this.nombre = name;
+        this.imagen = img;
+        this.precio = price;
+        this.categoria = categ;
+        this.url = link;
+        this.valida = valid;
     }
 
     public String getCodigo() {
@@ -69,11 +70,11 @@ public class Item implements Serializable {
         this.nombre = nombre;
     }
 
-    public String getFoto() {
-        return foto;
+    public String getImagen() {
+        return imagen;
     }
 
-    public void setFoto(String foto) {
-        this.foto = foto;
+    public void setImagen(String img) {
+        this.imagen = img;
     }
 }

@@ -7,22 +7,25 @@ import ucm.tfg.pccomponentes.notifications.NotificationDocumentObject
 
 object CheckData {
 
-    /*
-        Se comprueba si el texto introducido es de tipo email
+    /**
+     * Se comprueba si el texto introducido es de tipo email
      */
     fun checkEmail(email: String): Boolean {
         if (android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) return true;
         return false;
     }
 
-    /*
-        Se comprueba si la contraseña cumple los requisitos mínimos
+    /**
+     * Se comprueba si la contraseña cumple los requisitos mínimos
      */
     fun checkPassword(password: String): Boolean {
         if (password.length >= 6) return true;
         return false
     }
 
+    /**
+     * Actualizamos el registro del token de la base de datos
+     */
     fun actualizarToken(email: String) {
 
         // Recuperamos el token del móvil del usuario
@@ -39,6 +42,7 @@ object CheckData {
             val notificaciones = documento.toObject(NotificationDocumentObject::class.java)
 
             if (notificaciones != null && token != "") {
+
                 // Si el token recuperado del documento no es igual al token actual lo actualizamos y subimos el documento a la base de datos
                 if (notificaciones.getToken() != token) {
 
@@ -48,6 +52,5 @@ object CheckData {
 
             }
         }
-
     }
 }

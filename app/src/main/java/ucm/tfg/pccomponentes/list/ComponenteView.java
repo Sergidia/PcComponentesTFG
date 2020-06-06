@@ -1,11 +1,13 @@
 package ucm.tfg.pccomponentes.list;
 
+import ucm.tfg.pccomponentes.Main;
 import ucm.tfg.pccomponentes.R;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,106 +18,122 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.Source;
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-public class ComponenteView extends AppCompatActivity implements Response.Listener<JSONObject>,Response.ErrorListener {
-    boolean seguido;
-    TextView nombre;
-    TextView precio;
-    TextView componente;
-    TextView descripcion;
-    ImageView imagen;
-    CheckBox seguir;
-    EditText precioNoti;
-    Button btnActualiza;
-    String email;
-    Item item;
+public class ComponenteView extends AppCompatActivity {
 
-   private Interes seguimiento;
-    FirebaseFirestore db;
+    private String email;
 
-    RequestQueue request;
-    JsonObjectRequest jsonObjectRequest;
+    private Item item;
+    private boolean seguido;
+
+    private CheckBox seguir;
+    private EditText precioNoti;
+
+    private Interes seguimiento;
+    private FirebaseFirestore db;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_componente_view);
-        email = getIntent().getExtras().getString("email");
-        nombre = findViewById(R.id.nombreComponente);
-        precio = findViewById(R.id.precioComponente);
-        descripcion = findViewById(R.id.descripcionComponente);
-        componente = findViewById(R.id.tipoComponente);
-        imagen = findViewById(R.id.imagenComponente);
+
+        try {
+            email = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+
+            // Se comprueba que el usuario está correctamente autenticado, de lo contrario se vuelve a la vista del login
+            if (email == null || email.equals("") || email.equals("null")) {
+                showAlert("Error de autenticación");
+                FirebaseAuth.getInstance().signOut();
+                startActivity(new Intent(getApplicationContext(), Main.class));
+
+            } else {
+                mostrarArticulo();
+            }
+        }
+        catch (Exception e) {
+                showAlert("Error interno");
+                FirebaseAuth.getInstance().signOut();
+                startActivity(new Intent(getApplicationContext(), Main.class));
+            }
+    }
+
+    /**
+     * Se muestra la ficha de un artículo, incluidos los campo de precio relleno y el checkbox activado si el componente está seguido por el usuario
+     */
+    public void mostrarArticulo() {
+
+        TextView nombre = findViewById(R.id.nombreComponente);
+        TextView precio = findViewById(R.id.precioComponente);
+        TextView componente = findViewById(R.id.tipoComponente);
+        TextView descripcion = findViewById(R.id.descripcionComponente);
+        ImageView imagen = findViewById(R.id.imagenComponente);
+
         seguir = findViewById(R.id.checkBoxComponente);
         precioNoti = findViewById(R.id.precioNoti);
-        btnActualiza = findViewById(R.id.btnActualizar);
+        Button btnActualiza = findViewById(R.id.btnActualizar);
+
         db = FirebaseFirestore.getInstance();
         Bundle recepcion = getIntent().getExtras();
+
         if(recepcion != null){
+
             item = (Item) recepcion.getSerializable("componente");
             nombre.setText(item.getNombre());
             precio.setText(String.valueOf(item.getPrecio()));
             componente.setText(item.getCategoria());
             descripcion.setText(item.getUrl());
             Picasso.get()
-                    .load(item.getFoto())
+                    .load(item.getImagen())
                     .resize(300,300)
                     .into(imagen);
+
             seguido = false;
             seguimiento = new Interes(item.getCodigo(), (double) 0);
-            final double precio;
-            db.collection("usuarios").document(email).collection("interes")
-                    .get()
-                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                        @Override
-                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                            if (task.isSuccessful()) {
-                                for (QueryDocumentSnapshot document : task.getResult()) {
 
-                                    if(document.getId().equals(item.getCodigo())){
-                                        Map<String,Object> interes = new HashMap<String, Object>();
-                                        interes = document.getData();
-                                        seguimiento = new Interes(document.getId(),(Double.parseDouble((String)interes.get("precio"))));
+            try {
+                db.collection("usuarios").document(email).collection("interes")
+                        .get()
+                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
 
-                                        seguido = true;
-                                        seguir.setChecked(true);
-                                        precioNoti.setText(String.valueOf(seguimiento.getPrecioMax()));
+                            @Override
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                if (task.isSuccessful()) {
+                                    for (QueryDocumentSnapshot document : task.getResult()) {
+                                        if(document.getId().equals(item.getCodigo())){
+
+                                            Map<String,Object> interes;
+                                            interes = document.getData();
+                                            Double precioD = (Double) interes.get("precio");
+                                            seguimiento = new Interes(document.getId(), precioD);
+
+                                            seguido = true;
+                                            seguir.setChecked(true);
+                                            precioNoti.setText(String.valueOf(seguimiento.getPrecioMax()));
+                                        }
+
                                     }
-
+                                } else {
+                                    Log.d("Componente", "Error al obtener el documento: ", task.getException());
                                 }
-                            } else {
-                                Log.d("buu", "Error getting documents: ", task.getException());
                             }
-                        }
-                    });
-            //seguido = (Boolean) recepcion.getBoolean("interesado");
+                        });
 
+            } catch (NumberFormatException nE) {
+                showAlert("Debe introducir un número en el campo del precio");
+            }
         }
-
 
         btnActualiza.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -123,43 +141,59 @@ public class ComponenteView extends AppCompatActivity implements Response.Listen
                 actualizaNotificacion();
             }
         });
-
-
     }
+
+    /**
+     * Se actualiza el seguimiento del artículo
+     */
     public void actualizaNotificacion(){
+
         if(seguir.isChecked()){
 
-            if(!seguido || (seguido &&(seguimiento.getPrecioMax() != Double.parseDouble(precioNoti.getText().toString())))){
-                Map<String,Object> aux = new HashMap<String, Object>();
+            if (precioNoti.getText().toString().isEmpty()) {
+                showAlert("Debe indicar el precio a partir del cual ser notificado para seguir un componente");
+            }
+            else {
+                try {
 
-                aux.put("precio",Double.parseDouble(precioNoti.getText().toString()));
+                    // Si no estaba seguido se crea un seguimiento y si lo estaba pero el precio de seguimiento ha cambiado se actualiza
+                    if(!seguido || seguimiento.getPrecioMax() != Double.parseDouble(precioNoti.getText().toString())){
 
-                db.collection("usuarios").document(email)
-                        .collection("interes").document(seguimiento.getCodigo())
-                        .set(aux)
-                        .addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                seguimiento.setPrecioMax(Double.parseDouble(precioNoti.getText().toString()));
-                                if(!seguido){
-                                    seguido = true;
-                                    Toast.makeText(getApplicationContext(),"Ahora sigues este componente",Toast.LENGTH_SHORT).show();
-                                }
-                                else{
-                                    Toast.makeText(getApplicationContext(),"Precio de seguimiento actualizado",Toast.LENGTH_SHORT).show();
-                                }
+                        Map<String,Object> aux = new HashMap<>();
+                        aux.put("precio",Double.parseDouble(precioNoti.getText().toString()));
 
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(getApplicationContext(),"Error en la peticion",Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                        db.collection("usuarios").document(email)
+                                .collection("interes").document(seguimiento.getCodigo())
+                                .set(aux)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        seguimiento.setPrecioMax(Double.parseDouble(precioNoti.getText().toString()));
+                                        if(!seguido){
+                                            seguido = true;
+                                            Toast.makeText(getApplicationContext(),"Ahora sigues este componente",Toast.LENGTH_SHORT).show();
+                                        }
+                                        else{
+                                            Toast.makeText(getApplicationContext(),"Precio de seguimiento actualizado",Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        showAlert("Error al seguir el componente");
+                                    }
+                                });
+                    }
+                }
+                catch (NumberFormatException nE) {
+                    showAlert("Debe introducir un número en el campo del precio");
+                }
             }
         }
         else{
+
+            // Si ya estaba seguido se deja de seguir
             if(seguido){
                 db.collection("usuarios").document(email)
                         .collection("interes").document(seguimiento.getCodigo())
@@ -174,46 +208,23 @@ public class ComponenteView extends AppCompatActivity implements Response.Listen
                         .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(getApplicationContext(),"Error al intentar dejar de seguir el producto",Toast.LENGTH_SHORT).show();
+                                showAlert("Error al dejar de seguir el componente");
                             }
                         });
             }
         }
     }
-    private void cargarWebService() {
-        request = Volley.newRequestQueue(getApplicationContext());
-        String url ="https://192.168.1.37/ejemploBDRemota/wsJSONLista.php";
-        jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,url,null,this,this);
-        request.add(jsonObjectRequest);
-    }
-    @Override
-    public void onErrorResponse(VolleyError error) {
 
-    }
+    /*
+        Método para mostrar errores con una ventana emergente
+    */
+    private void showAlert(String mensajeError) {
 
-    @Override
-    public void onResponse(JSONObject response) {
-        try {
-            Item  item = null;
-            JSONArray json= response.optJSONArray("consulta");
-            if(json != null){
-                if(json.length() ==1){
-                    seguido = true;
-                    seguir.setChecked(true);
-                    precioNoti.setText(json.getJSONObject(0).optInt("precioNoti"));
-                }
-                else{
-                    seguido = false;
-                    seguir.setChecked(false);
-                    precioNoti.setText(0);
-                }
-            }
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-            Toast.makeText(getApplicationContext(),"Error con la conexion con el servidoR" +
-                    " "+ response,Toast.LENGTH_LONG).show();
-
-        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Error");
+        builder.setMessage(mensajeError);
+        builder.setPositiveButton("Aceptar", null);
+        AlertDialog dialog  = builder.create();
+        dialog.show();
     }
 }
