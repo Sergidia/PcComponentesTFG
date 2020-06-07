@@ -12,33 +12,34 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.SearchView;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity  implements SearchView.OnQueryTextListener{
 
-   private RecyclerView recycler;
-    private ArrayList<Item> datosTotales, datosMostrados, datosFiltrados;
+    private RecyclerView recycler;
+    private ArrayList<Item> listadoComponentes;
+    String filtro = "";
 
     private Adapter rva;
     private boolean isLoading;
-    private boolean usaBuscador;
+
+    private FirebaseFirestore db;
+    private DocumentSnapshot lastVisible;
 
     private BottomNavigationView bottomNavigationView;
 
@@ -66,7 +67,6 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
                 bottomNavigationView = findViewById(R.id.bottom_navigation);
                 bottomNavigationView.setSelectedItemId(R.id.principal);
                 setListenerBottomMenu();
-                usaBuscador = false;
 
                 LinearLayoutManager llm = new LinearLayoutManager(this);
                 llm.setOrientation(LinearLayoutManager.VERTICAL);
@@ -74,11 +74,10 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
 
                 recycler.setHasFixedSize(true);
 
-                datosTotales = new ArrayList<>();
-                datosMostrados = new ArrayList<>();
-                datosFiltrados = new ArrayList<>();
+                listadoComponentes = new ArrayList<>();
 
-                cargarListaComponentes();
+                db = FirebaseFirestore.getInstance();
+                iniciarListaComponentes();
             }
         }
         catch (Exception e) {
@@ -89,57 +88,130 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
     }
 
     /**
-     * Recuperación de los componentes de la base de datos
+     * Inicialización de la lista de componentes recuperando los 10 primeros de la base de datos
      */
-    private void cargarListaComponentes() {
+    private void iniciarListaComponentes() {
 
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("componentes")
+                .limit(10)
                 .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
 
                     @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                            Map<String,Object> componente = document.getData();
 
-                                Map<String,Object> componente = new HashMap<String, Object>();
-                                componente = document.getData();
+                            Item component = new Item(
+                                    document.getId(),
+                                    (String)componente.get("nombre"),
+                                    (String)componente.get("img"),
+                                    ((Number)componente.get("precio")).doubleValue(),
+                                    (String)componente.get("url"),
+                                    (String)componente.get("categoria"),
+                                    (Boolean)componente.get("valida"));
 
-                                Item aux = new Item(document.getId(),(String)componente.get("nombre"),
-                                        (String)componente.get("img"),
-                                        ((Number)componente.get("precio")).doubleValue(),
-                                        (String)componente.get("url"),
-                                        (String)componente.get("categoria"),
-                                        (Boolean)componente.get("valida"));
-
-                                datosTotales.add(aux);
-                            }
-                            cargarRecyclerView();
-                        } else {
-                            Log.d("Listado", "Error al obtener los componentes: ", task.getException());
+                            listadoComponentes.add(component);
+                            setLastVisible(document);
                         }
+                        cargarRecyclerView();
+                        isLoading = false;
                     }
                 });
     }
 
     /**
-     * Carga de la ficha del componente
+     * Ampliación de la lista de componentes que se produce cuando el usuario hace scroll y llega al final de la lista actual. Se cargan 10 nuevos componentes a partir del
+     * último cargado anteriormente (lastVisible). También se tiene en cuenta si se ha aplicado un filtro antes de hacer scroll
+     */
+    private void ampliarListaComponentes() {
+
+        Query docs;
+
+        if (filtro.equals("")) {
+            docs = db.collection("componentes")
+                    .limit(10)
+                    .startAfter(lastVisible);
+        }
+        else {
+            docs = db.collection("componentes")
+                    .whereGreaterThanOrEqualTo("nombre", filtro)
+                    .limit(10)
+                    .startAfter(lastVisible);
+        }
+
+        docs.get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                            Map<String,Object> componente = document.getData();
+
+                            Item component = new Item(
+                                    document.getId(),
+                                    (String)componente.get("nombre"),
+                                    (String)componente.get("img"),
+                                    ((Number)componente.get("precio")).doubleValue(),
+                                    (String)componente.get("url"),
+                                    (String)componente.get("categoria"),
+                                    (Boolean)componente.get("valida"));
+
+                            listadoComponentes.add(component);
+                            setLastVisible(document);
+                        }
+                        rva.notifyDataSetChanged();
+                        isLoading = false;
+                    }
+        });
+    }
+
+    /**
+     * Recuperación de los 10 primeros componentes según el filtro del nombre escrito por el usuario
+     *
+     */
+    private void filtrarListaComponentes() {
+
+        db.collection("componentes")
+                .whereGreaterThanOrEqualTo("nombre", filtro)
+                .limit(10)
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                            Map<String,Object> componente = document.getData();
+
+                            Item component = new Item(
+                                    document.getId(),
+                                    (String)componente.get("nombre"),
+                                    (String)componente.get("img"),
+                                    ((Number)componente.get("precio")).doubleValue(),
+                                    (String)componente.get("url"),
+                                    (String)componente.get("categoria"),
+                                    (Boolean)componente.get("valida"));
+
+                            listadoComponentes.add(component);
+                            setLastVisible(document);
+                        }
+                        cargarRecyclerView();
+                    }
+                });
+    }
+
+    /**
+     * Crea las fichas de los componentes y redirecciona a la vista ComponentView cuando se selecciona una de ellas
      */
     private void cargarRecyclerView(){
 
-        for(int j=0; j <10 && j< datosTotales.size();j++){
-            datosMostrados.add(datosTotales.get(j));
-        }
-
-        this.rva= new Adapter(datosMostrados);
+        this.rva= new Adapter(listadoComponentes);
         rva.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                Intent componenteView = new Intent(MainActivity.this,ComponenteView.class);
+                Intent componenteView = new Intent(MainActivity.this, ComponenteView.class);
                 Bundle miBundle = new Bundle();
-                miBundle.putSerializable("componente", datosMostrados.get(recycler.getChildAdapterPosition(v)));
+                miBundle.putSerializable("componente", listadoComponentes.get(recycler.getChildAdapterPosition(v)));
                 componenteView.putExtras(miBundle);
 
                 MainActivity.this.startActivity(componenteView);
@@ -150,40 +222,11 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
     }
 
     /**
-     * Menú inferior con la redirección a la lista de seguidos o al listado general de componentes (en este último caso se refresca la vista)
-     */
-    private void setListenerBottomMenu() {
-
-        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                if(item.getItemId() == R.id.seguidos){
-
-                    Intent i = new Intent(getApplicationContext(),SeguidosView.class);
-                    startActivity(i);
-                    overridePendingTransition(0,0);
-
-                    return true;
-                }
-                else if(item.getItemId() == R.id.principal){
-
-                    recreate();
-                    overridePendingTransition(0,0);
-
-                    return true;
-                }
-                return false;
-            }
-        });
-    }
-
-    /**
      * Listener del recycler referente a los scrolls
      */
     private void addListenerRecycler() {
 
-        /**
+        /*
          * Creación del listener para el scroll
          */
         this.recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -207,7 +250,7 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
                     if (!recyclerView.canScrollVertically(1)) {
 
                         //Final del listado, se llama al método que carga 10 más
-                        loadMore();
+                        ampliarListaComponentes();
                         isLoading = true;
                     }
                 }
@@ -216,75 +259,40 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
     }
 
     /**
-     * Aumementa el número de componentes mostrados en el listado en 10
-     */
-    private void loadMore() {
-
-        if((!usaBuscador && (datosMostrados.size() != datosTotales.size())) || (usaBuscador & (datosMostrados.size() != datosFiltrados.size()))){
-            datosMostrados.add(null);
-            rva.notifyItemInserted(datosMostrados.size() - 1);
-        }
-
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-
-            @Override
-            public void run() {
-                if((!usaBuscador && (datosMostrados.size() != datosTotales.size())) || (usaBuscador & (datosMostrados.size() != datosFiltrados.size()))){
-                    datosMostrados.remove(datosMostrados.size() - 1);
-                }
-
-                int scrollPosition = datosMostrados.size();
-                rva.notifyItemRemoved(scrollPosition);
-                if(!usaBuscador)
-                    for(int i =0; i <10 && datosMostrados.size()<datosTotales.size(); i++){
-                        datosMostrados.add(datosTotales.get(datosMostrados.size()));
-                }
-
-                rva.notifyDataSetChanged();
-                isLoading = false;
-            }
-        }, 2000);
-    }
-
-    /**
-     * Informa de que se ha aplicado un filtro al listado de componentes
+     * (No se usa) Serviría para aplicar el filtro una vez se pulse en la lupa, pero como lo hacemos en onQueryTextChange dinámicamente cuando escribe no es necesario, pero sí obligatorio ponerlo por el implements
+     *
      * @param query filtro escrito por el usuario
      * @return true
      */
     @Override
     public boolean onQueryTextSubmit(String query) {
-
-        try {
-            filter(query);
-            this.rva.setFilter(this.datosMostrados);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
         return true;
     }
 
     /**
-     * Informa si se ha cambiado el texto del filtro de componentes
+     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda
+     *
      * @param newText filtro escrito por el usuario
      * @return true
      */
     @Override
     public boolean onQueryTextChange(String newText) {
 
-        if(newText.equals("")){
-            usaBuscador = false;
-            datosMostrados.clear();
-            datosFiltrados.clear();
-            rva.notifyDataSetChanged();
-        }
+        listadoComponentes.clear();
+        this.filtro = newText;
+
+        if(newText.equals(""))
+            iniciarListaComponentes();
+
+        else
+            filtrarListaComponentes();
 
         return true;
     }
 
     /**
      * Menú superior, con el filtro de componentes y la hamburguesa para la redirección al perfil y el cierre de sesión
+     *
      * @param menu menu de la aplicación
      * @return true
      */
@@ -303,7 +311,7 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
 
             @Override
             public boolean onMenuItemActionCollapse(MenuItem item) {
-                rva.setFilter(datosMostrados);
+                //rva.setFilter(listadoComponentes);
                 return true;
             }
         });
@@ -343,36 +351,36 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
     }
 
     /**
-     * Filtrado de componentes por texto
-     *
-     * @param texto filtro del usuario
+     * Menú inferior con la redirección a la lista de seguidos o al listado general de componentes (en este último caso se refresca la vista)
      */
-    private void filter(String texto){
+    private void setListenerBottomMenu() {
 
-        if(!texto.equals("")){
-            try {
+        bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
 
-                usaBuscador = true;
-                texto=texto.toLowerCase();
-                for(Item i: this.datosTotales){
-                    String itemSelec=i.getNombre().toLowerCase();
-                    if(itemSelec.contains(texto)){
-                        this.datosFiltrados.add(i);
-                    }
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                if(item.getItemId() == R.id.seguidos){
+
+                    Intent i = new Intent(getApplicationContext(), SeguidosView.class);
+                    startActivity(i);
+                    overridePendingTransition(0,0);
+
+                    return true;
                 }
+                else if(item.getItemId() == R.id.principal){
 
-                this.datosMostrados.clear();
-                int i = 0;
+                    recreate();
+                    overridePendingTransition(0,0);
 
-                while (i < 10 && i < datosFiltrados.size()){
-                    datosMostrados.add(datosFiltrados.get(i));
-                    i++;
+                    return true;
                 }
-
-            }catch (Exception e){
-                e.printStackTrace();
+                return false;
             }
-        }
+        });
+    }
+
+    private void setLastVisible(DocumentSnapshot last) {
+        this.lastVisible = last;
     }
 
     /**
