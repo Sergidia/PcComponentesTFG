@@ -100,19 +100,8 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                            Map<String,Object> componente = document.getData();
 
-                            Item component = new Item(
-                                    document.getId(),
-                                    (String)componente.get("nombre"),
-                                    (String)componente.get("img"),
-                                    ((Number)componente.get("precio")).doubleValue(),
-                                    (String)componente.get("url"),
-                                    (String)componente.get("categoria"),
-                                    (Boolean)componente.get("valida"));
-
-                            listadoComponentes.add(component);
-                            setLastVisible(document);
+                            addComponente(document);
                         }
                         cargarRecyclerView();
                         isLoading = false;
@@ -145,19 +134,8 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                            Map<String,Object> componente = document.getData();
 
-                            Item component = new Item(
-                                    document.getId(),
-                                    (String)componente.get("nombre"),
-                                    (String)componente.get("img"),
-                                    ((Number)componente.get("precio")).doubleValue(),
-                                    (String)componente.get("url"),
-                                    (String)componente.get("categoria"),
-                                    (Boolean)componente.get("valida"));
-
-                            listadoComponentes.add(component);
-                            setLastVisible(document);
+                            addComponente(document);
                         }
                         rva.notifyDataSetChanged();
                         isLoading = false;
@@ -167,7 +145,6 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
 
     /**
      * Recuperación de los 10 primeros componentes según el filtro del nombre escrito por el usuario
-     *
      */
     private void filtrarListaComponentes() {
 
@@ -180,23 +157,34 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                            Map<String,Object> componente = document.getData();
 
-                            Item component = new Item(
-                                    document.getId(),
-                                    (String)componente.get("nombre"),
-                                    (String)componente.get("img"),
-                                    ((Number)componente.get("precio")).doubleValue(),
-                                    (String)componente.get("url"),
-                                    (String)componente.get("categoria"),
-                                    (Boolean)componente.get("valida"));
-
-                            listadoComponentes.add(component);
-                            setLastVisible(document);
+                            addComponente(document);
                         }
                         cargarRecyclerView();
+                        isLoading = false;
                     }
                 });
+    }
+
+    /**
+     * Añade un componente a la lista de componentes
+     *
+     * @param document documento del componente
+     */
+    public void addComponente(QueryDocumentSnapshot document) {
+
+        Map<String,Object> componente = document.getData();
+        Item component = new Item(
+                document.getId(),
+                (String)componente.get("nombre"),
+                (String)componente.get("img"),
+                ((Number)componente.get("precio")).doubleValue(),
+                (String)componente.get("url"),
+                (String)componente.get("categoria"),
+                (Boolean)componente.get("valida"));
+
+        listadoComponentes.add(component);
+        setLastVisible(document);
     }
 
     /**
