@@ -42,6 +42,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
     private Adapter rva;
     private boolean isLoading;
+    private  boolean primeraVez;
 
     private FirebaseFirestore db;
     private String email;
@@ -51,7 +52,8 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
+        isLoading = true;
+        primeraVez = true;
         setTitle("Listado de seguimiento");
         super.onCreate(savedInstanceState);
 
@@ -83,6 +85,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                 mapaInteres = new HashMap<>();
 
                 db = FirebaseFirestore.getInstance();
+                isLoading = true;
                 iniciarListaComponentes();
             }
         }
@@ -159,8 +162,10 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                                     });
                         }*/
                         Log.d("Listado antes recycler", String.valueOf(listadoComponentes.size()));
-                        cargarRecyclerView();
-                        isLoading = false;
+                        if(listadoComponentes.size() == listadoSeguidos.size()){
+                            cargarRecyclerView();
+                            isLoading = false;
+                        }
                     }
                 });
     }
@@ -182,6 +187,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if(task.isSuccessful()){
+                            int cont = listadoSeguidos.size();
                             for (QueryDocumentSnapshot document : task.getResult()) {
 
                                 Map<String,Object> interes = document.getData();
@@ -195,7 +201,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                                 setLastVisibleSeguido(document);
                             }
 
-                            for(int i = 0; i < listadoSeguidos.size(); i++){
+                            for(int i = cont; i < listadoSeguidos.size(); i++){
 
                                 db.collection("componentes")
                                         .document(listadoSeguidos.get(i).getCodigo())
@@ -221,6 +227,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                                                                 (Boolean)componente.get("valida"));
 
                                                         listadoComponentes.add(component);
+                                                        rva.notifyDataSetChanged();
                                                     }
                                                     else {
 
@@ -245,10 +252,10 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                                         });
                             }
                         }
-                        rva.notifyDataSetChanged();
-                        isLoading = false;
+
                     }
                 });
+        isLoading = false;
     }
 
     /**
@@ -362,6 +369,16 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                         listadoComponentes.add(component);
                     }
                 }
+
+                if(listadoComponentes.size() == listadoSeguidos.size()){
+                    if(primeraVez){
+                        cargarRecyclerView();
+                        primeraVez = false;
+                    }
+                    rva.notifyDataSetChanged();
+                    isLoading = false;
+                }
+
             }
         });
 

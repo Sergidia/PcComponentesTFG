@@ -67,7 +67,7 @@ implements View.OnClickListener{
                 .load(listDatos.get(pos).getImagen())
                 .resize(300,300)
                 .into(vhd.foto);
-        vhd.precio.setText(String.valueOf(listDatos.get(pos).getPrecio()));
+        vhd.precio.setText(String.valueOf(listDatos.get(pos).getPrecio())+ " \u20AC");
     }
 
 
