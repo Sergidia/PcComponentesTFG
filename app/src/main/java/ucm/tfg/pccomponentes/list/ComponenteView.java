@@ -121,6 +121,10 @@ public class ComponenteView extends AppCompatActivity {
 
                                             seguido = true;
                                             seguir.setChecked(true);
+
+                                            //LinearLayout layout = findViewById(R.id.linearLayoutComponentView);
+                                            //layout.setBackgroundResource(R.drawable.component_interest_rounded_border);
+
                                             precioNoti.setText(String.valueOf(seguimiento.getPrecioMax()));
                                         }
 

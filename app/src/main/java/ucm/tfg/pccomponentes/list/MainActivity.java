@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -92,6 +93,8 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
      */
     private void iniciarListaComponentes() {
 
+        Log.d("Listado Main", "Se inicializa la lista de componentes");
+
         db.collection("componentes")
                 .limit(10)
                 .get()
@@ -114,6 +117,8 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
      * último cargado anteriormente (lastVisible). También se tiene en cuenta si se ha aplicado un filtro antes de hacer scroll
      */
     private void ampliarListaComponentes() {
+
+        Log.d("Listado Main", "Final del scroll, número de componentes actuales cargados: " + listadoComponentes.size());
 
         Query docs;
 
@@ -148,6 +153,8 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
      */
     private void filtrarListaComponentes() {
 
+        Log.d("Filtro Main", "Se solicita recuperar de la base de datos los componentes con filtro: " + filtro);
+
         db.collection("componentes")
                 .whereGreaterThanOrEqualTo("nombre", filtro)
                 .limit(10)
@@ -173,6 +180,8 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
      */
     public void addComponente(QueryDocumentSnapshot document) {
 
+        Log.d("Componente Main", "Se añade al a lista un documento con id: " + document.getId());
+
         Map<String,Object> componente = document.getData();
         Item component = new Item(
                 document.getId(),
@@ -185,6 +194,8 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
 
         listadoComponentes.add(component);
         setLastVisible(document);
+
+        Log.d("Componente Main", "El documento se corresponde con el componente con nombre: " + componente.get("nombre"));
     }
 
     /**
@@ -247,36 +258,39 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
     }
 
     /**
-     * (No se usa) Serviría para aplicar el filtro una vez se pulse en la lupa, pero como lo hacemos en onQueryTextChange dinámicamente cuando escribe no es necesario, pero sí obligatorio ponerlo por el implements
+     * Filtra el listado de componentes con el texto escrito cuando el usuario pulsa en la lupa
      *
      * @param query filtro escrito por el usuario
      * @return true
      */
     @Override
     public boolean onQueryTextSubmit(String query) {
-        return true;
-    }
-
-    /**
-     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda
-     *
-     * @param newText filtro escrito por el usuario
-     * @return true
-     */
-    @Override
-    public boolean onQueryTextChange(String newText) {
 
         listadoComponentes.clear();
-        this.filtro = newText;
+        rva.notifyDataSetChanged();
+        this.filtro = query;
 
-        if(newText.equals(""))
+        if(query.equals(""))
             iniciarListaComponentes();
 
         else
             filtrarListaComponentes();
 
+        Log.d("Listado Main", "Aplicado filtro: " + query);
+
         return true;
     }
+
+    /**
+     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda. No lo usamos
+     * por bugs encontrados cuando se escribe rápidamente desde Android Studio con el teclado físico, que provoca
+     * que se duplique, triplique... la información. Si se escribe a una velocidad normal no ocurre
+     *
+     * @param newText filtro escrito por el usuario
+     * @return true
+     */
+    @Override
+    public boolean onQueryTextChange(String newText) { return true; }
 
     /**
      * Menú superior, con el filtro de componentes y la hamburguesa para la redirección al perfil y el cierre de sesión
@@ -298,10 +312,7 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
             }
 
             @Override
-            public boolean onMenuItemActionCollapse(MenuItem item) {
-                //rva.setFilter(listadoComponentes);
-                return true;
-            }
+            public boolean onMenuItemActionCollapse(MenuItem item) { return true; }
         });
         return true;
     }
@@ -318,9 +329,12 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
         Intent i;
 
         switch (id){
+
+            // Para el caso de cierre de sesión se añade un flag que cierra todas las ventanas abiertas anteriormente
             case R.id.opCerrarSesion:
                 FirebaseAuth.getInstance().signOut();
                 i = new Intent(getApplicationContext(), Main.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
                 overridePendingTransition(0,0);
                 break;
@@ -367,6 +381,12 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
         });
     }
 
+    /**
+     * Método que almacena el último documento cargado en la lista, de esta forma cuando se llega al final del scroll cargamos 10 nuevos componentes desde el último de ellos.
+     * Este método nos permite almacenar el documento desde dentro de los Listener
+     *
+     * @param last Documento Firebase
+     */
     private void setLastVisible(DocumentSnapshot last) {
         this.lastVisible = last;
     }

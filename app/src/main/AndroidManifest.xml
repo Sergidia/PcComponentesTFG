@@ -9,21 +9,21 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".Main">
+        <activity android:name=".Main" android:screenOrientation="portrait" android:configChanges="orientation|keyboardHidden" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".main.Register">
+        <activity android:name=".main.Register" android:screenOrientation="portrait" android:configChanges="orientation|keyboardHidden" >
             <intent-filter>
                 <action android:name="android.intent.action.REGISTER" />
 
                 <category android:name="android.intent.category.REGISTER" />
             </intent-filter>
         </activity>
-        <activity android:name=".main.Profile">
+        <activity android:name=".main.Profile" android:screenOrientation="portrait" android:configChanges="orientation|keyboardHidden" >
             <intent-filter>
                 <action android:name="android.intent.action.PROFILE" />
 
@@ -37,7 +37,7 @@
                 <category android:name="android.intent.category.LIST" />
             </intent-filter>
         </activity>
-        <activity android:name=".list.ComponenteView">
+        <activity android:name=".list.ComponenteView" android:screenOrientation="portrait" android:configChanges="orientation|keyboardHidden" >
             <intent-filter>
                 <action android:name="android.intent.action.COMPONENT" />
 

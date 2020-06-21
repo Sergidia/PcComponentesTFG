@@ -2,6 +2,7 @@ package ucm.tfg.pccomponentes.list;
 
 import ucm.tfg.pccomponentes.R;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,7 @@ implements View.OnClickListener{
     private final int VIEW_TYPE_LOADING = 1;
     private ArrayList<Item> listDatos;
     private View.OnClickListener listener;
+    private View view;
 
     public Adapter(ArrayList<Item> listDatos) {
         this.listDatos = listDatos;
@@ -34,12 +36,12 @@ implements View.OnClickListener{
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
         RecyclerView.ViewHolder v=null;
         if(i == VIEW_TYPE_ITEM){
-          View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_list,null,false);
-          view.setOnClickListener(this);
-          v = new ViewHolderDatos(view);
+            view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.component_card,null,false);
+            view.setOnClickListener(this);
+            v = new ViewHolderDatos(view);
       }
       else {
-          View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_loading,null,false);
+          view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.item_loading,null,false);
           v = new ViewHolderCarga(view);
         }
         return v;
@@ -49,7 +51,6 @@ implements View.OnClickListener{
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
             if(holder instanceof ViewHolderDatos){
                 adaptarItem((ViewHolderDatos) holder,position);
-
             }
             else if(holder instanceof  ViewHolderCarga){
                 showLoadingView((ViewHolderCarga) holder, position);
@@ -57,6 +58,7 @@ implements View.OnClickListener{
     }
 
     private void showLoadingView(ViewHolderCarga holder, int position) {
+        Log.d("Carga", "ey");
 
     }
 
@@ -93,10 +95,11 @@ implements View.OnClickListener{
         private ImageView foto;
         ViewHolderDatos(@NonNull View itemView) {
             super(itemView);
-            nombre = itemView.findViewById(R.id.idDocum);
-            categoria= itemView.findViewById(R.id.idDescr);
-            foto= itemView.findViewById(R.id.idImagen);
-            precio= itemView.findViewById(R.id.idPrecio);
+
+            nombre = itemView.findViewById(R.id.componentName);
+            categoria = itemView.findViewById(R.id.componentCategory);
+            foto = itemView.findViewById(R.id.componentImage);
+            precio = itemView.findViewById(R.id.componentPrice);
         }
 
     }
@@ -106,9 +109,5 @@ implements View.OnClickListener{
             super(itemView);
             barra = itemView.findViewById(R.id.progressBar);
         }
-    }
-    public void setFilter(ArrayList<Item> ali){
-        this.listDatos = ali;
-        notifyDataSetChanged();
     }
 }

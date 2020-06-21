@@ -28,16 +28,15 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 public class SeguidosView extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
     private RecyclerView recycler;
     private ArrayList<Item> listadoComponentes;
-    private ArrayList<Interes> listadoSeguidos;
-    private HashMap<String, Interes> mapaInteres;
     String filtro = "";
 
     private Adapter rva;
@@ -81,8 +80,6 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
                 recycler.setHasFixedSize(true);
                 listadoComponentes = new ArrayList<>();
-                listadoSeguidos = new ArrayList<>();
-                mapaInteres = new HashMap<>();
 
                 db = FirebaseFirestore.getInstance();
                 isLoading = true;
@@ -102,6 +99,9 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
      */
     private void iniciarListaComponentes() {
 
+        Log.d("Listado Seguidos", "Se inicializa la lista de componentes");
+
+        // Se recuperan los 10 primeros documentos de la lista de interés del usuario
         db.collection("usuarios")
                 .document(email)
                 .collection("interes")
@@ -110,71 +110,43 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+
+                        // Una vez recuperados se itera sobre el resultado de la query. Cada documento recuperado se corresponde con un documento de 'interés',
+                        // por lo que se busca el documento de tipo 'componente' que corresponda y se añade a la lista de componentes.
+                        // Además, guardamos el documento de 'interés' en la variable "lastVisibleSeguidos"
                         for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
 
-                            Map<String,Object> interes = document.getData();
-                            Interes aux = new Interes(
-                                    document.getId(),
-                                    ((Number)interes.get("precio")).doubleValue()
-                            );
-
-                            listadoSeguidos.add(aux);
-                            mapaInteres.put(aux.getCodigo(), aux);
+                            addComponente(recuperarComponente(document));
                             setLastVisibleSeguido(document);
                         }
 
-                        for(int i = 0; i < listadoSeguidos.size(); i++){
-
-                            Task<DocumentSnapshot> task = db.collection("componentes")
-                                    .document(listadoSeguidos.get(i).getCodigo())
-                                    .get();
-
-                            addComponente(task); //Hay que cambiar los OnComplete de ampliarListaComponentes y filtrarListaComponentes por OnSuccess y luego llamar a esta función para reutilizar código
-                        }
-
-                        /*for(int i = 0; i < listadoSeguidos.size(); i++){
-
-                            Log.d("Inicio", String.valueOf(i));
-                            db.collection("componentes")
-                                    .document(listadoSeguidos.get(i).getCodigo())
-                                    .get()
-                                    .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-
-                                        @Override
-                                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                                            if (task.isSuccessful()) {
-
-                                                DocumentSnapshot document = task.getResult();
-                                                Map<String,Object> componente = document.getData();
-
-                                                Item component = new Item(
-                                                        document.getId(),
-                                                        (String)componente.get("nombre"),
-                                                        (String)componente.get("img"),
-                                                        ((Number)componente.get("precio")).doubleValue(),
-                                                        (String)componente.get("url"),
-                                                        (String)componente.get("categoria"),
-                                                        (Boolean)componente.get("valida"));
-
-                                                addListadoComponentes(component);
-                                            }
-                                        }
-                                    });
-                        }*/
-                        Log.d("Listado antes recycler", String.valueOf(listadoComponentes.size()));
-                        if(listadoComponentes.size() == listadoSeguidos.size()){
-                            cargarRecyclerView();
-                            isLoading = false;
-                        }
+                        cargarRecyclerView();
+                        isLoading = false;
                     }
                 });
     }
 
     /**
+     * Método que devuelve el documento de la colección 'componentes' que tenga el mismo nombre que el documento de 'interés'
+     *
+     * @param document Documento de interés del usuario
+     * @return Documento del componente relacionado con ese interés
+     */
+    private Task<DocumentSnapshot> recuperarComponente(QueryDocumentSnapshot document) {
+        Task<DocumentSnapshot> task = db.collection("componentes")
+                .document(document.getId())
+                .get();
+
+        return task;
+    }
+
+    /**
      * Ampliación de la lista de componentes que se produce cuando el usuario hace scroll y llega al final de la lista actual. Se cargan 10 nuevos componentes a partir del
-     * último cargado anteriormente (lastVisibleSeguido). También se tiene en cuenta si se ha aplicado un filtro antes de hacer scroll
+     * último cargado anteriormente (lastVisibleSeguido).
      */
     private void ampliarListaComponentes() {
+
+        Log.d("Listado Seguidos", "Final del scroll, número de componentes actuales cargados: " + listadoComponentes.size());
 
         db.collection("usuarios")
                 .document(email)
@@ -186,82 +158,31 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if(task.isSuccessful()){
-                            int cont = listadoSeguidos.size();
+                        if (task.isSuccessful()) {
+
                             for (QueryDocumentSnapshot document : task.getResult()) {
 
-                                Map<String,Object> interes = document.getData();
-                                Interes aux = new Interes(
-                                        document.getId(),
-                                        ((Number)interes.get("precio")).doubleValue()
-                                );
-
-                                listadoSeguidos.add(aux);
-                                mapaInteres.put(aux.getCodigo(),aux);
+                                addComponente(recuperarComponente(document));
                                 setLastVisibleSeguido(document);
+
                             }
-
-                            for(int i = cont; i < listadoSeguidos.size(); i++){
-
-                                db.collection("componentes")
-                                        .document(listadoSeguidos.get(i).getCodigo())
-                                        .get()
-                                        .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-
-                                            @Override
-                                            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                                                if (task.isSuccessful()) {
-
-                                                    DocumentSnapshot document = task.getResult();
-                                                    Map<String,Object> componente = document.getData();
-
-                                                    if (filtro.equals("")) {
-
-                                                        Item component = new Item(
-                                                                document.getId(),
-                                                                (String)componente.get("nombre"),
-                                                                (String)componente.get("img"),
-                                                                ((Number)componente.get("precio")).doubleValue(),
-                                                                (String)componente.get("url"),
-                                                                (String)componente.get("categoria"),
-                                                                (Boolean)componente.get("valida"));
-
-                                                        listadoComponentes.add(component);
-                                                        rva.notifyDataSetChanged();
-                                                    }
-                                                    else {
-
-                                                        String nombre = (String)componente.get("nombre");
-
-                                                        if (nombre.contains(filtro)) {
-
-                                                            Item component = new Item(
-                                                                    document.getId(),
-                                                                    (String)componente.get("nombre"),
-                                                                    (String)componente.get("img"),
-                                                                    ((Number)componente.get("precio")).doubleValue(),
-                                                                    (String)componente.get("url"),
-                                                                    (String)componente.get("categoria"),
-                                                                    (Boolean)componente.get("valida"));
-
-                                                            listadoComponentes.add(component);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        });
-                            }
+                            rva.notifyDataSetChanged();
+                            isLoading = false;
                         }
-
                     }
                 });
-        isLoading = false;
     }
 
     /**
-     * Recuperación de los 10 primeros componentes según el filtro del nombre escrito por el usuario
+     * Recuperación de los 10 primeros componentes según el filtro del nombre escrito por el usuario. Para el caso de la clase 'Seguidos' podríamos usar el método de
+     * iniciarListaComponentes porque el filtro no se aplica a la colección de 'interés', cuyos documentos sólo guardan id y precio, sino que se aplica a la colección de
+     * 'componentes'. Por ello el filtro se aplica siempre en el método 'addComponente'. Hemos decidido mantener los métodos separados pese a la repetición del código para
+     * hacer más fácil la lectura del mismo y por posibles cambios futuros en la base de datos (por ejemplo, podríamos añadir un campo nombre en el documento de 'interés' y
+     * aplicar el filtro directamente en este método, pero decidimos no hacerlo así para no tener dos documentos relacionados con datos repetidos pese a que la base de datos no es relacional
      */
     private void filtrarListaComponentes() {
+
+        Log.d("Filtro Seguidos", "Se solicita recuperar de la base de datos los componentes con filtro: " + filtro);
 
         db.collection("usuarios")
                 .document(email)
@@ -272,62 +193,21 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if(task.isSuccessful()){
+                        if (task.isSuccessful()) {
                             for (QueryDocumentSnapshot document : task.getResult()) {
 
-                                Map<String,Object> interes = document.getData();
-                                Interes aux = new Interes(
-                                        document.getId(),
-                                        ((Number)interes.get("precio")).doubleValue()
-                                );
-
-                                listadoSeguidos.add(aux);
-                                mapaInteres.put(aux.getCodigo(),aux);
+                                addComponente(recuperarComponente(document));
                                 setLastVisibleSeguido(document);
                             }
-
-                            for(int i = 0; i < listadoSeguidos.size(); i++){
-
-                                db.collection("componentes")
-                                        .document(listadoSeguidos.get(i).getCodigo())
-                                        .get()
-                                        .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-
-                                            @Override
-                                            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                                                if (task.isSuccessful()) {
-
-                                                    DocumentSnapshot document = task.getResult();
-                                                    Map<String,Object> componente = document.getData();
-
-                                                    String nombre = (String)componente.get("nombre");
-
-                                                    if (nombre.contains(filtro)) {
-
-                                                        Item component = new Item(
-                                                                document.getId(),
-                                                                (String)componente.get("nombre"),
-                                                                (String)componente.get("img"),
-                                                                ((Number)componente.get("precio")).doubleValue(),
-                                                                (String)componente.get("url"),
-                                                                (String)componente.get("categoria"),
-                                                                (Boolean)componente.get("valida"));
-
-                                                        listadoComponentes.add(component);
-                                                    }
-                                                }
-                                            }
-                                        });
-                            }
+                            cargarRecyclerView();
+                            isLoading = false;
                         }
-                        cargarRecyclerView();
-                        isLoading = false;
                     }
                 });
     }
 
     /**
-     * Añade un componente a la lista de componentes
+     * Añade un componente a la lista de componentes si su nombre coincide con el filtro
      *
      * @param task documento del componente
      */
@@ -336,6 +216,11 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
         task.addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
+
+                String added = "No añadido";
+
+                Log.d("Componente Seguidos", "Documento con id: " + documentSnapshot.getId());
+
                 Map<String, Object> componente = documentSnapshot.getData();
 
                 if (filtro.equals("")) {
@@ -351,11 +236,13 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
                     listadoComponentes.add(component);
 
+                    added = "Añadido";
+
                 } else {
 
                     String nombre = (String) componente.get("nombre");
 
-                    if (nombre.contains(filtro)) {
+                    if (StringUtils.containsIgnoreCase(nombre,filtro)) {
 
                         Item component = new Item(
                                 documentSnapshot.getId(),
@@ -367,22 +254,18 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                                 (Boolean) componente.get("valida"));
 
                         listadoComponentes.add(component);
+
+                        added = "Añadido";
                     }
                 }
 
-                if(listadoComponentes.size() == listadoSeguidos.size()){
-                    if(primeraVez){
-                        cargarRecyclerView();
-                        primeraVez = false;
-                    }
-                    rva.notifyDataSetChanged();
-                    isLoading = false;
-                }
+                rva.notifyDataSetChanged();
+                isLoading = false;
+
+                Log.d("Componente Seguidos", "El documento se corresponde con el componente con nombre: " + componente.get("nombre") + ". " + added);
 
             }
         });
-
-        Log.d("Listado addComponent", String.valueOf(listadoComponentes.size()));
     }
 
     /**
@@ -390,8 +273,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
      */
     private void cargarRecyclerView() {
 
-        Log.d("Listado recycler", String.valueOf(listadoComponentes.size()));
-        Log.d("Listado recycler seg", String.valueOf(listadoSeguidos.size()));
+        Log.d("Recycler Seguidos", "Componentes actuales en el listado: " + listadoComponentes.size());
 
         this.rva= new Adapter(listadoComponentes);
         rva.setOnClickListener(new View.OnClickListener() {
@@ -409,35 +291,6 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
         recycler.setAdapter(rva);
     }
-
-    /*
-    private void cargarRecyclerView() {
-
-        this.rva= new Adapter(listadoComponentes);
-        rva.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                boolean interesado = false;
-                Intent componenteView = new Intent(SeguidosView.this,ComponenteView.class);
-                Bundle miBundle = new Bundle();
-
-                if(mapaInteres.containsKey(listadoComponentes.get(recycler.getChildAdapterPosition(v)).getCodigo())){
-                    interesado = true;
-                    miBundle.putSerializable("seguimiento",mapaInteres.get(listadoComponentes.get(recycler.getChildAdapterPosition(v)).getCodigo()));
-                }
-
-                miBundle.putBoolean("interesado", interesado);
-                miBundle.putSerializable("componente", listadoComponentes.get(recycler.getChildAdapterPosition(v)));
-                componenteView.putExtras(miBundle);
-
-                SeguidosView.this.startActivity(componenteView);
-            }
-        });
-
-        recycler.setAdapter(rva);
-    }
-     */
 
     /**
      * Listener del recycler referente a los scrolls
@@ -477,38 +330,39 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
     }
 
     /**
-     * (No se usa) Serviría para aplicar el filtro una vez se pulse en la lupa, pero como lo hacemos en onQueryTextChange dinámicamente cuando escribe no es necesario, pero sí obligatorio ponerlo por el implements
+     * Filtra el listado de componentes con el texto escrito cuando el usuario pulsa en la lupa
      *
      * @param query filtro escrito por el usuario
      * @return true
      */
     @Override
     public boolean onQueryTextSubmit(String query) {
-        return true;
-    }
 
-    /**
-     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda
-     *
-     * @param newText filtro escrito por el usuario
-     * @return true
-     */
-    @Override
-    public boolean onQueryTextChange(String newText) {
-
-        Log.d("Listado antes del clear", String.valueOf(listadoComponentes.size()));
         listadoComponentes.clear();
         rva.notifyDataSetChanged();
-        this.filtro = newText;
+        this.filtro = query;
 
-        if(newText.equals(""))
+        if(query.equals(""))
             iniciarListaComponentes();
 
         else
             filtrarListaComponentes();
 
+        Log.d("Listado Seguidos", "Aplicado filtro: " + query);
+
         return true;
     }
+
+    /**
+     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda. No lo usamos
+     * por bugs encontrados cuando se escribe rápidamente desde Android Studio con el teclado físico, que provoca
+     * que se duplique, triplique... la información. Si se escribe a una velocidad normal no ocurre
+     *
+     * @param newText filtro escrito por el usuario
+     * @return true
+     */
+    @Override
+    public boolean onQueryTextChange(String newText) { return true; }
 
     /**
      * Menú superior, con el filtro de componentes y la hamburguesa para la redirección al perfil y el cierre de sesión
@@ -525,16 +379,10 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
         mi.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
             @Override
-            public boolean onMenuItemActionExpand(MenuItem item) {
-
-                return true;
-            }
+            public boolean onMenuItemActionExpand(MenuItem item) { return true; }
 
             @Override
-            public boolean onMenuItemActionCollapse(MenuItem item) {
-                //rva.setFilter(listadoComponentes);
-                return true;
-            }
+            public boolean onMenuItemActionCollapse(MenuItem item) { return true; }
         });
         return true;
     }
@@ -551,9 +399,12 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
         Intent i;
 
         switch (id){
+
+            // Para el caso de cierre de sesión se añade un flag que cierra todas las ventanas abiertas anteriormente
             case R.id.opCerrarSesion:
                 FirebaseAuth.getInstance().signOut();
                 i = new Intent(getApplicationContext(), Main.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
                 overridePendingTransition(0,0);
                 break;
@@ -572,7 +423,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
     }
 
     /**
-     * Menú inferior con la redirección a la lista de seguidos o al listado general de componentes (en este último caso se refresca la vista)
+     * Menú inferior con la redirección al listado general de componentes a la lista de seguidos (en este último caso se refresca la vista)
      */
     private void setListenerBottomMenu() {
 
@@ -589,8 +440,10 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
                 }
                 else if(item.getItemId() == R.id.principal){
 
-                    Intent i = new Intent(getApplicationContext(),MainActivity.class);
-                    startActivity(i);
+                    // No se crea un intent nuevo del tipo 'MainActivity' porque el listado general de componentes siempre se abrirá al iniciar la aplicación,
+                    // por lo que cerrando el actual (Seguidos) volveríamos a dicha vista siempre, evitando lecturas innecesarias a la base de datos y manteniendo
+                    // al usuario en el lugar del listado donde lo dejó. De querer refrescar la vista lo podría hacer pulsando 'Principal' desde MainActivity
+                    finish();
                     overridePendingTransition(0,0);
 
                     return true;
@@ -600,12 +453,14 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
         });
     }
 
+    /**
+     * Método que almacena el último documento cargado en la lista, de esta forma cuando se llega al final del scroll cargamos 10 nuevos componentes desde el último de ellos.
+     * Este método nos permite almacenar el documento desde dentro de los Listener
+     *
+     * @param last Documento Firebase
+     */
     private void setLastVisibleSeguido(DocumentSnapshot last) {
         this.lastVisibleSeguido = last;
-    }
-
-    private void addListadoComponentes(Item componente) {
-        listadoComponentes.add(componente);
     }
 
     /**

@@ -3,6 +3,7 @@
     <string name="user_hint">Usuario (email)</string>
     <string name="password_hint">Contraseña</string>
     <string name="forgotPassword_hint">¿Has olvidado tu contraseña?</string>
+    <string name="passwordEdit_hint">Modificar contraseña</string>
     <string name="passwordConfirm_hint">Confirmar contraseña</string>
     <string name="signIn_text">Iniciar sesión</string>
     <string name="register_text">Registrarse</string>

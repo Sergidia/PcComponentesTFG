@@ -128,6 +128,7 @@ class Profile : AppCompatActivity() {
     private fun showMain() {
 
         val mainIntent = Intent(this, Main::class.java)
+        mainIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(mainIntent)
     }
 
@@ -138,6 +139,7 @@ class Profile : AppCompatActivity() {
 
         val listIntent = Intent(this, MainActivity::class.java)
         startActivity(listIntent)
+        finish()
     }
 
     /**
@@ -147,6 +149,7 @@ class Profile : AppCompatActivity() {
 
         val seguidosIntent = Intent(this, SeguidosView::class.java)
         startActivity(seguidosIntent)
+        finish()
     }
 
     /**
