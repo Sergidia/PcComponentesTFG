@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -78,7 +79,7 @@ public class ComponenteView extends AppCompatActivity {
         TextView nombre = findViewById(R.id.nombreComponente);
         TextView precio = findViewById(R.id.precioComponente);
         TextView componente = findViewById(R.id.tipoComponente);
-        TextView descripcion = findViewById(R.id.descripcionComponente);
+        Button detalles = findViewById(R.id.buttonNavDetails);
         ImageView imagen = findViewById(R.id.imagenComponente);
 
         seguir = findViewById(R.id.checkBoxComponente);
@@ -94,7 +95,18 @@ public class ComponenteView extends AppCompatActivity {
             nombre.setText(item.getNombre());
             precio.setText(String.valueOf(item.getPrecio()));
             componente.setText(item.getCategoria());
-            descripcion.setText(item.getUrl());
+            detalles.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Uri uri = Uri.parse(item.getUrl());
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setData(uri);
+
+                    Intent chooser = Intent.createChooser(intent, "Open with");
+
+                    v.getContext().startActivity(chooser);
+                }
+            });
             Picasso.get()
                     .load(item.getImagen())
                     .resize(300,300)

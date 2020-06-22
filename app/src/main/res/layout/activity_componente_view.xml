@@ -2,10 +2,10 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/detalleComponente"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".list.ComponenteView"
-    android:id="@+id/detalleComponente" >
+    tools:context=".list.ComponenteView">
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -80,15 +80,14 @@
         </androidx.cardview.widget.CardView>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/descripcionComponente"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/buttonNavDetails"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:autoLink="web"
-        android:text="url"
+        android:text="Abrir en navegador"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
@@ -107,8 +106,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:orientation="horizontal">
 
@@ -116,22 +115,22 @@
                 android:id="@+id/checkBoxComponente"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Producto seguido"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="parent"
-                android:text="Producto seguido" />
+                app:layout_constraintTop_toBottomOf="parent" />
 
             <EditText
                 android:id="@+id/precioNoti"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:layout_constraintStart_toStartOf="@+id/checkBoxComponente"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="parent"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
                 android:ems="10"
                 android:hint="precio aviso"
-                android:inputType="number" />
+                android:inputType="number"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/checkBoxComponente"
+                app:layout_constraintTop_toBottomOf="parent" />
 
         </LinearLayout>
 
@@ -139,8 +138,8 @@
             android:id="@+id/btnActualizar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:background="@drawable/button_rounded"
             android:text="Actualizar" />
