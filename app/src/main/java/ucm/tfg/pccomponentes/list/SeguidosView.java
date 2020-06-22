@@ -41,7 +41,6 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
     private Adapter rva;
     private boolean isLoading;
-    private  boolean primeraVez;
 
     private FirebaseFirestore db;
     private String email;
@@ -51,8 +50,6 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        isLoading = true;
-        primeraVez = true;
         setTitle("Listado de seguimiento");
         super.onCreate(savedInstanceState);
 
@@ -164,7 +161,6 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
                                 addComponente(recuperarComponente(document));
                                 setLastVisibleSeguido(document);
-
                             }
                             rva.notifyDataSetChanged();
                             isLoading = false;
@@ -178,7 +174,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
      * iniciarListaComponentes porque el filtro no se aplica a la colección de 'interés', cuyos documentos sólo guardan id y precio, sino que se aplica a la colección de
      * 'componentes'. Por ello el filtro se aplica siempre en el método 'addComponente'. Hemos decidido mantener los métodos separados pese a la repetición del código para
      * hacer más fácil la lectura del mismo y por posibles cambios futuros en la base de datos (por ejemplo, podríamos añadir un campo nombre en el documento de 'interés' y
-     * aplicar el filtro directamente en este método, pero decidimos no hacerlo así para no tener dos documentos relacionados con datos repetidos pese a que la base de datos no es relacional
+     * aplicar el filtro directamente en este método, pero decidimos no hacerlo así para no tener dos documentos relacionados con datos repetidos pese a que la base de datos no es relacional)
      */
     private void filtrarListaComponentes() {
 
@@ -317,7 +313,7 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                if (!isLoading) {
+                if (!isLoading && dy > 0) {
                     if (!recyclerView.canScrollVertically(1)) {
 
                         //Final del listado, se llama al método que carga 10 más
@@ -331,6 +327,10 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
 
     /**
      * Filtra el listado de componentes con el texto escrito cuando el usuario pulsa en la lupa
+     *
+     * Nota: onQueryTextChange y onQueryTextSubmit tienen un comportamiento indeseado cuando se usa el teclado físico y no
+     * el del móvil (sea el del emulador o un móvil real), ejecutando dos veces el método. Sólo ocurre cuando se pulsa ENTER
+     * para ejecutar la consulta, pero no ocurre si se escribe con el teclado físico pero se pulsa con el ratón el icono de la lupa
      *
      * @param query filtro escrito por el usuario
      * @return true
@@ -354,15 +354,28 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
     }
 
     /**
-     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda. No lo usamos
-     * por bugs encontrados cuando se escribe rápidamente desde Android Studio con el teclado físico, que provoca
-     * que se duplique, triplique... la información. Si se escribe a una velocidad normal no ocurre
+     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda. Sólo lo usamos
+     * cuando se vacía la caja de texto para evitar lecturas múltiples en la base de datos
+     *
+     * Nota: onQueryTextChange y onQueryTextSubmit tienen un comportamiento indeseado cuando se usa el teclado físico y no
+     * el del móvil (sea el del emulador o un móvil real), ejecutando dos veces el método. Sólo ocurre cuando se pulsa ENTER
+     * para ejecutar la consulta, pero no ocurre si se escribe con el teclado físico pero se pulsa con el ratón el icono de la lupa
      *
      * @param newText filtro escrito por el usuario
      * @return true
      */
     @Override
-    public boolean onQueryTextChange(String newText) { return true; }
+    public boolean onQueryTextChange(String newText) {
+
+        if(newText.equals("")) {
+            listadoComponentes.clear();
+            rva.notifyDataSetChanged();
+            this.filtro = newText;
+
+            iniciarListaComponentes();
+        }
+        return true;
+    }
 
     /**
      * Menú superior, con el filtro de componentes y la hamburguesa para la redirección al perfil y el cierre de sesión

@@ -2,12 +2,15 @@ package ucm.tfg.pccomponentes.main
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.*
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.android.synthetic.main.activity_profile.*
 import ucm.tfg.pccomponentes.Main
 import ucm.tfg.pccomponentes.R
@@ -44,7 +47,27 @@ class Profile : AppCompatActivity() {
             FirebaseAuth.getInstance().signOut()
             showMain()
         }
-        else iniciarPerfil()
+        else {
+
+            // Se inicia una instancia en Firestore para almacenar las preferencias de notificación del usuario
+            val db = FirebaseFirestore.getInstance()
+
+            // Accedemos al documento del usuario
+            val notificacionesUsuario: DocumentReference = db.collection("usuarios").document(email)
+            val userDoc = notificacionesUsuario.get()
+            userDoc.addOnSuccessListener {
+
+                // Convertimos el documento en un Map
+                val componente: Map<String, Any> = it.getData() as Map<String, Any>
+
+                // Marcamos el radioButton que se corresponda con la preferencia del usuario guardada en la base de datos
+                if (componente["email"] as Boolean)
+                    radioGroupNotif.check(notifEmail.id)
+
+                else radioGroupNotif.check(notifPush.id)
+            }
+            iniciarPerfil()
+        }
     }
 
     /**
@@ -56,49 +79,128 @@ class Profile : AppCompatActivity() {
 
         userText.setText(FirebaseAuth.getInstance().getCurrentUser()?.getEmail().toString())
 
+        // Botón para aplicar cambio en el perfil (contraseña y/o notificaciones)
         applyButton.setOnClickListener {
-            if (passwordText.text.isNotEmpty() && passwordConfirmText.text.isNotEmpty() && passwordText.text.isNotEmpty().equals(passwordConfirmText.text.isNotEmpty())) {
 
-                // Si la contraseña no cumple los requisitos mínimos se muestra un error
-                if (CheckData.checkPassword(passwordText.text.toString())) {
+            // Se inicia una instancia en Firestore para almacenar las preferencias de notificación del usuario
+            val db = FirebaseFirestore.getInstance()
 
-                    // Se actualiza la contraseña
-                    FirebaseAuth.getInstance().getCurrentUser()
-                            ?.updatePassword(passwordText.text.toString())
+            // Recuperamos el token del móvil del usuario
+            val token: String = MyFirebaseMessagingService.getInstanceToken()
+
+            // Accedemos al documento del usuario
+            val notificacionesUsuario: DocumentReference = db.collection("usuarios").document(userText.text.toString())
+
+            // Si la contraseña está vacía significa que se quiere cambiar sólo el tipo de notificación
+            if (passwordText.text.isNotEmpty() && passwordConfirmText.text.isNotEmpty()) {
+
+                // Si no está vacía se comprueba si coinciden, porque el usuario querrá cambiar la contraseña
+                if(passwordText.text.toString() == passwordConfirmText.text.toString()) {
+
+                    // Si la contraseña no cumple los requisitos mínimos se muestra un error
+                    if (CheckData.checkPassword(passwordText.text.toString())) {
+
+                        // Se actualiza la contraseña
+                        FirebaseAuth.getInstance().getCurrentUser()
+                                ?.updatePassword(passwordText.text.toString())
                                 ?.addOnCompleteListener {
                                     if (it.isSuccessful){
 
-                                        // Si los datos son correctos se inicia una instancia en Firestore para almacenar las preferencias de notificación del usuario
-                                        val db = FirebaseFirestore.getInstance()
-
-                                        // Recuperamos el token del móvil del usuario
-                                        val token: String = MyFirebaseMessagingService.getInstanceToken()
-
-                                        // Accedemos al documento del usuario
-                                        val notificacionesUsuario: DocumentReference = db.collection("usuarios").document(userText.text.toString())
-
-                                        // Creamos un objeto de tipo Notification, que contiene los booleanos de los dos tipos de notificaciones según la elección del usuario y el token del dispositivo móvil
+                                        // Creamos un objeto de tipo Notification, que contiene los booleanos de los dos tipos de notificaciones según la elección del usuario
+                                        // y el token del dispositivo móvil
                                         val notif: NotificationDocumentObject = NotificationDocumentObject(notifPush.isChecked, notifEmail.isChecked, token)
 
                                         // Insertamos el documento en la base de datos
                                         notificacionesUsuario.set(notif).addOnCompleteListener{
+
                                             if (it.isSuccessful){
                                                 // Si se ha actualizado correctamente redirigimos al listado de componentes
+                                                Toast.makeText(applicationContext,
+                                                        "Perfil actualizado", Toast.LENGTH_SHORT).show()
                                                 showList()
+
                                             } else {
-                                                showAlert(it.toString())
+                                                Log.d("Profile", "Error: $it")
                                                 showAlert("No se ha podido actualizar el usuario, compruebe las opciones de notificación seleccionadas")
                                             }
-
                                         }
 
                                     } else {
-                                        showAlert(it.toString())
+                                        Log.d("Profile", "Error: $it")
                                         showAlert("No se ha podido actualizar el usuario, compruebe el usuario y la contraseña introducidos")
                                     }
+                                }
+                    } else showAlert("La contraseña debe tener mínimo 6 caracteres")
+                } else showAlert("Las contraseñas introducidas no son iguales ")
+            } else {
+
+                // Creamos un objeto de tipo Notification, que contiene los booleanos de los dos tipos de notificaciones según la elección del usuario
+                // y el token del dispositivo móvil
+                val notif: NotificationDocumentObject = NotificationDocumentObject(notifPush.isChecked, notifEmail.isChecked, token)
+
+                // Insertamos el documento en la base de datos
+                notificacionesUsuario.set(notif).addOnCompleteListener {
+
+                    if (it.isSuccessful) {
+                        // Si se ha actualizado correctamente redirigimos al listado de componentes
+                        Toast.makeText(applicationContext,
+                                "Perfil actualizado", Toast.LENGTH_SHORT).show()
+                        showList()
+
+                    } else {
+                        Log.d("Profile", "Error: $it")
+                        showAlert("No se han podido actualizar las preferencias de notificación")
+                    }
+                }
+            }
+        }
+
+        // Opción para borrar permanentemente la cuenta
+        deleteAccount.setOnClickListener {
+
+            val account: String = userText.text.toString()
+
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Eliminar cuenta")
+            builder.setMessage("¿Está seguro de querer borrar permanentemente su cuenta?")
+
+            // Creamos un diálogo de alerta con dos opciones, sí o no. Además, si se pulsa sí se vuelve a crear
+            // un segundo diálogo de alerta para pedirle de nuevo la confirmación del borrado de cuenta al usuario
+            builder.setPositiveButton(android.R.string.yes) { dialog, which ->
+
+                val builderYes = AlertDialog.Builder(this)
+                builderYes.setTitle("Confirmar")
+                builderYes.setMessage("Va a proceder a borrar su cuenta " + account + ". ¿Confirmar?")
+
+                builderYes.setPositiveButton(android.R.string.yes) { dialog, which ->
+
+                    // Si tanto en la primera alerta como en la segunda se ha dado a aceptar, se procede a borrar el usuario y su documento asociado
+                    FirebaseFirestore.getInstance().collection("usuarios").document(account)
+                            .delete()
+                            .addOnSuccessListener {
+                                FirebaseAuth.getInstance().currentUser?.delete()
+
+                                Toast.makeText(applicationContext,
+                                        "Se ha borrado la cuenta", Toast.LENGTH_LONG).show()
+
+                                showMain()
                             }
-                } else showAlert("La contraseña debe tener mínimo 6 caracteres")
-            } else showAlert("Los campos de usuario y contraseña no pueden estar vacíos")
+                            .addOnFailureListener {
+                                e -> Log.w("Profile", "Error al borrar el documento del usuario", e)
+                                showAlert("No se ha podido borrar el usuario, inténtelo más tarde")
+                            }
+                }
+                builderYes.setNegativeButton(android.R.string.no) { dialog, which ->
+                    Toast.makeText(applicationContext,
+                            "Borrado de cuenta cancelado", Toast.LENGTH_SHORT).show()
+                }
+                builderYes.show()
+            }
+            builder.setNegativeButton(android.R.string.no) { dialog, which ->
+                Toast.makeText(applicationContext,
+                        "Borrado de cuenta cancelado", Toast.LENGTH_SHORT).show()
+            }
+            builder.show()
         }
     }
 

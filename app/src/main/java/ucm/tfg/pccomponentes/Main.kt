@@ -2,6 +2,7 @@ package ucm.tfg.pccomponentes
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -32,10 +33,11 @@ class Main : AppCompatActivity() {
             // Comprobamos el token y lo actualizamos de hacer falta
             CheckData.actualizarToken(email)
 
-            // Independientemente de que hayamos o no actualizado el token, redirigimos a la vista del listado de componentes
-            showList()
+            // Independientemente de que hayamos o no actualizado el token, redirigimos a la vista del listado de componentes si verificó su registro
+            if (FirebaseAuth.getInstance().currentUser?.isEmailVerified == true)
+                showList()
         }
-        // Si no está autenticado generamos la vista del login
+        // Si no está autenticado o verificado generamos la vista del login
          else iniciarMain()
     }
 
@@ -89,6 +91,7 @@ class Main : AppCompatActivity() {
                                         }
 
                                     } else {
+                                        Log.d("Login", "Error: $it")
                                         showAlert("No se ha podido iniciar sesión, compruebe los datos introducidos")
                                     }
                                 }

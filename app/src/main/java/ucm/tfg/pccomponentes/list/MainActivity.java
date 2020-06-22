@@ -260,6 +260,10 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
     /**
      * Filtra el listado de componentes con el texto escrito cuando el usuario pulsa en la lupa
      *
+     * Nota: onQueryTextChange y onQueryTextSubmit tienen un comportamiento indeseado cuando se usa el teclado físico y no
+     * el del móvil (sea el del emulador o un móvil real), ejecutando dos veces el método. Sólo ocurre cuando se pulsa ENTER
+     * para ejecutar la consulta, pero no ocurre si se escribe con el teclado físico pero se pulsa con el ratón el icono de la lupa
+     *
      * @param query filtro escrito por el usuario
      * @return true
      */
@@ -282,15 +286,30 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
     }
 
     /**
-     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda. No lo usamos
-     * por bugs encontrados cuando se escribe rápidamente desde Android Studio con el teclado físico, que provoca
-     * que se duplique, triplique... la información. Si se escribe a una velocidad normal no ocurre
+     * Filtra el listado de componentes con cada letra que se escriba en el formulario de búsqueda. Sólo lo usamos
+     * cuando se vacía la caja de texto para evitar lecturas múltiples en la base de datos
+     *
+     * Nota: onQueryTextChange y onQueryTextSubmit tienen un comportamiento indeseado cuando se usa el teclado físico y no
+     * el del móvil (sea el del emulador o un móvil real), ejecutando dos veces el método. Sólo ocurre cuando se pulsa ENTER
+     * para ejecutar la consulta, pero no ocurre si se escribe con el teclado físico pero se pulsa con el ratón el icono de la lupa
      *
      * @param newText filtro escrito por el usuario
      * @return true
      */
     @Override
-    public boolean onQueryTextChange(String newText) { return true; }
+    public boolean onQueryTextChange(String newText) {
+
+        if(newText.equals("")) {
+            listadoComponentes.clear();
+            rva.notifyDataSetChanged();
+            this.filtro = newText;
+
+            iniciarListaComponentes();
+        }
+
+        return true;
+
+    }
 
     /**
      * Menú superior, con el filtro de componentes y la hamburguesa para la redirección al perfil y el cierre de sesión

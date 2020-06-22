@@ -2,6 +2,7 @@ package ucm.tfg.pccomponentes.main
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -76,14 +77,14 @@ class Register : AppCompatActivity()  {
                                                 // Si el registro ha sido satisfactorio redirigimos a la vista del login
                                                 showMain()
                                             } else {
-                                                showAlert(it.toString())
+                                                Log.d("Register", "Error: $it")
                                                 showAlert("No se ha podido registrar el usuario, compruebe las opciones de notificación seleccionadas")
                                             }
 
                                         }
 
                                     } else {
-                                        showAlert(it.toString())
+                                        Log.d("Register", "Error: $it")
                                         showAlert("No se ha podido registrar el usuario, compruebe el usuario y la contraseña introducidos")
                                     }
                                 }
