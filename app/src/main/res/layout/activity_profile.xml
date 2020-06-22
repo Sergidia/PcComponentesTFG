@@ -89,14 +89,14 @@
             android:id="@+id/notifPush"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
+            android:paddingLeft="50dp"
             android:text="@string/notif_push_text" />
 
         <RadioButton
             android:id="@+id/notifEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
+            android:paddingLeft="50dp"
             android:text="@string/notif_email_text" />
     </RadioGroup>
 
