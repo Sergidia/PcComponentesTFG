@@ -179,6 +179,7 @@ class Profile : AppCompatActivity() {
                             .delete()
                             .addOnSuccessListener {
                                 FirebaseAuth.getInstance().currentUser?.delete()
+                                FirebaseAuth.getInstance().signOut()
 
                                 Toast.makeText(applicationContext,
                                         "Se ha borrado la cuenta", Toast.LENGTH_LONG).show()
