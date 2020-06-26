@@ -102,8 +102,6 @@ class Register : AppCompatActivity()  {
      */
     private fun showMain() {
 
-        val mainIntent = Intent(this, Main::class.java)
-        startActivity(mainIntent)
         finish()
     }
 
