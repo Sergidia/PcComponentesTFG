@@ -3,6 +3,7 @@ package ucm.tfg.pccomponentes.main
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -74,6 +75,8 @@ class Register : AppCompatActivity()  {
                                                 // Enviamos el email de verificación al correo del usuario
                                                 FirebaseAuth.getInstance().currentUser?.sendEmailVerification()
 
+                                                Toast.makeText(applicationContext,
+                                                        "Debe verificar el registro desde el email enviado a su cuenta de correo", Toast.LENGTH_LONG).show()
                                                 // Si el registro ha sido satisfactorio redirigimos a la vista del login
                                                 showMain()
                                             } else {
@@ -101,6 +104,7 @@ class Register : AppCompatActivity()  {
 
         val mainIntent = Intent(this, Main::class.java)
         startActivity(mainIntent)
+        finish()
     }
 
     /**

@@ -353,8 +353,8 @@ public class MainActivity extends AppCompatActivity  implements SearchView.OnQue
             case R.id.opCerrarSesion:
                 FirebaseAuth.getInstance().signOut();
                 i = new Intent(getApplicationContext(), Main.class);
-                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
+                finish();
                 overridePendingTransition(0,0);
                 break;
 

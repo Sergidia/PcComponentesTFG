@@ -416,15 +416,16 @@ public class SeguidosView extends AppCompatActivity implements SearchView.OnQuer
             // Para el caso de cierre de sesión se añade un flag que cierra todas las ventanas abiertas anteriormente
             case R.id.opCerrarSesion:
                 FirebaseAuth.getInstance().signOut();
-                i = new Intent(getApplicationContext(), Main.class);
-                i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
+                i = new Intent(getApplicationContext(), Main.class);;
                 startActivity(i);
+                finish();
                 overridePendingTransition(0,0);
                 break;
 
             case R.id.op_perfil:
                 i = new Intent(getApplicationContext(), Profile.class);
                 startActivity(i);
+                finish();
                 overridePendingTransition(0,0);
                 break;
 
